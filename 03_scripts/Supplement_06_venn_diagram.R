@@ -1,25 +1,28 @@
+
 # ------------------------------------ #
-# ----------- SUPPLEMENT 10  --------- #
+# ----------- SUPPLEMENT 06  --------- #
 # ------------------------------------ #
 
-# Summarise overlap among methods (not run in workspace):
-# Analyse FST for outgroups, then REMOVE:
+### Summarise overlap among outlier detection methods:
+### Author: Annabel Smith
 
+# Load workspace:
 load("../04_workspaces/Supp_venn_diagram")
+
+# Load functions:
+invisible(lapply(paste("../02_analysis_libraries/",dir("../02_analysis_libraries"),sep=""),function(x) source(x)))
+
 library(VennDiagram)
 
-# UPDATE 22 March 2019: LFMM has been updated with new bioclim variables; there was only a difference of 2 x loci
+# INSTRUCTIONS:
 
-# Instructions:
+# run STEP_02_filter_and_format.R all the way down to the outlier loci step...
 
-# first run STEP_02_filter_and_format.R all the way down to the outlier loci step...
-
-# remove cultivars and outgroups, remove sites with small sample sizes and run:
+# remove cultivars and outgroups, remove sites with small sample sizes and run the script:
 
 # Create data set with ONLY non-neutral loci
 # Then save.image("../04_workspaces/Supp_venn_diagram")
 
-# OLD version (before bioclim update): dim() should 454 x 3026 (3024 loci)
 # NEW version (after bioclim update): dim() should 454 x 3028 (3026 loci)
 
 ghead(filtered_data); dim(filtered_data)

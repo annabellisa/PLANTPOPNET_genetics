@@ -1,5 +1,5 @@
 
-# author: Annabel Smith
+# Author: Annabel Smith
 
 plink_locus_info<-function(locus_info_data){
 

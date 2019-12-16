@@ -1,7 +1,15 @@
-# Analyse FST for outgroups, then REMOVE:
+
+# ------------------------------------ #
+# ----------- SUPPLEMENT 05  --------- #
+# ------------------------------------ #
+
+### Analyse FST for outgroups, then REMOVE:
 ### Author: Annabel Smith
 
-gp_dir<-"/Users/annabelsmith/Documents/01_Current/PROJECTS/01_PLANTPOPNET/DATA_and_ANALYSIS/SNP_analysis/GENOTYPE_processing/ANALYSIS_RESULTS/Genepop_DATA_FILES"
+# load functions:
+invisible(lapply(paste("../02_analysis_libraries/",dir("../02_analysis_libraries"),sep=""),function(x) source(x)))
+
+gp_dir<-"../ANALYSIS_RESULTS/Genepop_DATA_FILES"
 dir(gp_dir)
 
 ds_filt2<-read.table(paste(gp_dir,"dartseq_filt2.txt",sep="/"),header=T)

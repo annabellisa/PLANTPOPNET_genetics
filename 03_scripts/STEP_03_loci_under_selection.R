@@ -9,14 +9,12 @@
 # Load and tidy workspace and remove everything except necessary objects:
 load("../04_workspaces/STEP01_proc_wksp"); rm(list=setdiff(ls(), c("snp_onerow","linf","sdat")))
 
-# Load working workspace:
+# Load workspace:
 # Has BayeScan, PCAdapt and LFMM results saved:
 load("../04_workspaces/STEP03_sel_wksp")
 
-# UPDATE 22 March 2019: Site data has been updated with new BioClim variables, LFMM analyses re-run, new plots saved and updates saved in "../04_workspaces/STEP03_sel_wksp"
-
 # load functions:
-invisible(lapply(paste("/Users/annabelsmith/Documents/01_Current/PROJECTS/01_PLANTPOPNET/DATA_and_ANALYSIS/SNP_analysis/GENOTYPE_processing/ANALYSE_GENOME/02_analysis_libraries/",dir("../02_analysis_libraries"),sep=""),function(x) source(x)))
+invisible(lapply(paste("../02_analysis_libraries/",dir("../02_analysis_libraries"),sep=""),function(x) source(x)))
 
 #########################################
 ####	    ANALYSE BAYESCAN:    	 ####
@@ -30,7 +28,7 @@ gt_data<-snp_onerow[-c(grep("OG", snp_onerow$site),grep("CAT", snp_onerow$site),
 gt_data<-tidy.df(gt_data)
 
 # Directory with bayescan results:
-bs_dir<-"/Users/annabelsmith/Documents/01_Current/PROJECTS/01_PLANTPOPNET/DATA_and_ANALYSIS/SNP_analysis/GENOTYPE_processing/ANALYSIS_RESULTS/LOCI_UNDER_SELECTION/BayeScan/bayescan_filt3/bayescan_filt3_results"
+bs_dir<-"../ANALYSIS_RESULTS/LOCI_UNDER_SELECTION/BayeScan/bayescan_filt3/bayescan_filt3_results"
 dir(bs_dir)
 
 bs_fst<-paste(bs_dir,"bayescan_filt3_out_fst.txt",sep="/")
@@ -43,7 +41,7 @@ bs_n_outl<-bsres$nb_outliers
 # MARKER file to separate non-neutral loci:
 
 # Get locus index (this is the locus index file that is made in format_structure() function for bayescan):
-bslinf<-read.table("/Users/annabelsmith/Documents/01_Current/PROJECTS/01_PLANTPOPNET/DATA_and_ANALYSIS/SNP_analysis/GENOTYPE_processing/ANALYSIS_RESULTS/LOCI_UNDER_SELECTION/BayeScan/bayescan_filt3/bs_loci_filt3.txt",header=T)
+bslinf<-read.table("../ANALYSIS_RESULTS/LOCI_UNDER_SELECTION/BayeScan/bayescan_filt3/bs_loci_filt3.txt",header=T)
 head(bslinf)
 
 bsoutl<-data.frame(lind=bs_outl,outl=1)
@@ -101,7 +99,7 @@ length(loc.toanalyse)
 head(loc.toanalyse)
 
 # Put files here:	
-out.dir<-"/Users/annabelsmith/Documents/01_Current/PROJECTS/01_PLANTPOPNET/DATA_and_ANALYSIS/SNP_analysis/GENOTYPE_processing/ANALYSIS_RESULTS/LOCI_UNDER_SELECTION/BayeScan/bayescan_filt3/bayescan_filt3_50_random_heatmaps"
+out.dir<-"../ANALYSIS_RESULTS/LOCI_UNDER_SELECTION/BayeScan/bayescan_filt3/bayescan_filt3_50_random_heatmaps"
 
 # Make sure they're all in site data
 unique(gt_data$site) %in% sdat$site_code
@@ -150,7 +148,7 @@ library(qvalue)
 # tutorial:
 # browseVignettes("pcadapt")
 
-path_to_file <- "/Users/annabelsmith/Documents/01_Current/PROJECTS/01_PLANTPOPNET/DATA_and_ANALYSIS/SNP_analysis/GENOTYPE_processing/ANALYSIS_RESULTS/LOCI_UNDER_SELECTION/PCAdapt/pcadapt_filt2/pcadapt_files"
+path_to_file <- "../ANALYSIS_RESULTS/LOCI_UNDER_SELECTION/PCAdapt/pcadapt_filt2/pcadapt_files"
 dir(path_to_file)
 
 filename <- read.pcadapt(paste(path_to_file,"pcadapt_filt2.bed",sep="/"), type = "bed")
@@ -239,7 +237,7 @@ points(1:nrow(qp),-log(qp$p,10),pch=20,col=as.factor(qp$q<0.05))
 # plot(1:nrow(qp),qp$q,pch=20,col=as.factor(qp$q<0.05))
 
 # get locus indices for outliers:
-pca_loc<-read.table("/Users/annabelsmith/Documents/01_Current/PROJECTS/01_PLANTPOPNET/DATA_and_ANALYSIS/SNP_analysis/GENOTYPE_processing/ANALYSIS_RESULTS/LOCI_UNDER_SELECTION/PCAdapt/pcadapt_filt2/pcadapt_filt2_loci.txt",header=T)
+pca_loc<-read.table("../ANALYSIS_RESULTS/LOCI_UNDER_SELECTION/PCAdapt/pcadapt_filt2/pcadapt_filt2_loci.txt",header=T)
 pca_loc$pca_outl<-ifelse(pca_loc$lind %in% outliers,1,0)
 table(pca_loc$pca_outl)
 
@@ -252,7 +250,7 @@ table(pca_loc$pca_outl)
 library(lfmm)
 library(qvalue)
 
-lfmm_dir<-"/Users/annabelsmith/Documents/01_Current/PROJECTS/01_PLANTPOPNET/DATA_and_ANALYSIS/SNP_analysis/GENOTYPE_processing/ANALYSIS_RESULTS/LOCI_UNDER_SELECTION/LFMM/lfmm_filt2"
+lfmm_dir<-"../ANALYSIS_RESULTS/LOCI_UNDER_SELECTION/LFMM/lfmm_filt2"
 dir(lfmm_dir)
 
 # Genotype data:
@@ -435,37 +433,6 @@ cbind(lfr_old,lfr_new)[which(lfr_old$lfmm_PC3==1),]
 head(lfres)
 
 lfr<-lfr_new
-
-# PLOT GENOTYPE FREQUENCIES BY LOCATION:
-
-# UPDATE 22 March 2019: have not re-run heatmaps because the functions are not working and we're not longer using them
-
-# MAKE dir for output files:	
-lfhm.dir<-"/Users/annabelsmith/Documents/01_Current/PROJECTS/01_PLANTPOPNET/DATA_and_ANALYSIS/SNP_analysis/GENOTYPE_processing/ANALYSIS_RESULTS/LOCI_UNDER_SELECTION/LFMM/lfmm_filt2/lfmm_filt2_heatmaps_new_bioclim"
-
-# Make sure they're all in site data
-unique(gt_data$site) %in% sdat$site_code
-
-# Takes about 15 seconds for 100
-ghead(gt_data)
-head(sdat,3)
-dir(lfhm.dir)
-
-pcs<-colnames(lfpcs)[2:ncol(lfpcs)]
-head(lfr)
-head(lfpcs)
-
-loc.toanalyse<-as.character(lfr$locus[lfr$lfmm_PC3==1])
-
-# Use the first loc_toplot if you don't want to plot all loci, otherwise use the second
-loc_toplot<-sample(1:length(loc.toanalyse),30)
-loc_toplot<-1:length(loc.toanalyse)
-
-plot_freq_pc(loc.toanalyse,gt_data,sdat,lfhm.dir,loc_toplot,"Comp.1","ascending")
-
-plot_freq_pc(loc.toanalyse,gt_data,sdat,lfhm.dir,loc_toplot,"Comp.2","ascending")
-
-plot_freq_pc(loc.toanalyse,gt_data,sdat,lfhm.dir,loc_toplot,"Comp.3","ascending")
 
 } # close lfmm
 

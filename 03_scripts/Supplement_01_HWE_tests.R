@@ -1,16 +1,16 @@
 
 # ------------------------------------ #
-# ----------- SUPPLEMENT 02  --------- #
+# ----------- SUPPLEMENT 01  --------- #
 # ------------------------------------ #
 
 ### HWE TESTS
 ### Author: Annabel Smith
 
-# Load formatted data including including functions and c("snp_onerow","linf","sdat","ukril_snp")
+# Load workspace:
 load("../04_workspaces/STEP02_filter_wksp")
 
 # load functions:
-invisible(lapply(paste("/Users/annabelsmith/Documents/01_Current/PROJECTS/01_PLANTPOPNET/DATA_and_ANALYSIS/SNP_analysis/GENOTYPE_processing/ANALYSE_GENOME/02_analysis_libraries/",dir("../02_analysis_libraries"),sep=""),function(x) source(x)))
+invisible(lapply(paste("../02_analysis_libraries/",dir("../02_analysis_libraries"),sep=""),function(x) source(x)))
 
 # Subset UK/IRL data, which form a single genetic cluster, for LD testing
 ukirl_sites<-as.character(sdat$site_code[sdat$country %in% c("UK","Ireland")])

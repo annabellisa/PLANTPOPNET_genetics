@@ -34,7 +34,6 @@ return(gdm_dat)
 } # close format gdm
 
 # simplified version for SI:
-
 plot_gdm_simp<-function(spline_dat,gdm_fit,gdm_xlabs,gdm_test,adjust_p=NULL){
 
 if(adjust_p==T) gdm_ps<-p.adjust(gdm_test[[3]][,1],method="bonferroni") else gdm_ps<-gdm_test[[3]][,1]
@@ -79,78 +78,6 @@ if(max(spline_dat$y)<0.1) ylim.ppos<-(max(spline_dat$y)/3.8)*3 else ylim.ppos<-(
 if (gdm_ps[i]==0) text(-0.5,ylim.ppos,paste(p.prefix,"0.001",sep=""),adj=0,col="red") else text(-0.5,ylim.ppos,paste(p.prefix,gdm_ps[i],sep=""),adj=0,col="red")
 
 } # close spline native
-
-} # close plot all
-
-} # close function
-
-# there is a bug in this version where it accesses the p-values
-
-plot_gdm<-function(spline_dat,gdm_fit,gdm_xlabs,gdm_test){
-
-for (i in 1:(length(spline_dat$x[1,])+2)){
-
-if(i == 1) {
-	
-plot(gdm_fit$ecological,gdm_fit$observed,ylim=c(0,1),cex=0.5,pch=20,col="blue",xlab="Predicted ecological distance",ylab="Observed compositional\ndissimilarity")
-overlayX<-seq(from=min(gdm_fit$ecological), to=max(gdm_fit$ecological),length.out=length(gdm_fit$ecological))
-overlayY <- 1 - exp(-overlayX)
-lines(overlayX, overlayY, lwd = 1.5)
-
-} # close i == 1
-
-if(i == 2) {
-	
-plot(gdm_fit$predicted,gdm_fit$observed,ylim=c(0,1),cex=0.5,pch=20,col="blue",xlab="Predicted compositional dissimilarity",ylab="Observed compositional\ndissimilarity")
-overlayX<-seq(from=min(gdm_fit$predicted), to=max(gdm_fit$predicted),length.out=length(gdm_fit$predicted))
-overlayY <- 1 - exp(-overlayX)
-lines(overlayX, overlayY, lwd = 1.5)
-
-} # close i == 2
-
-if(i>2){
-
-spline.thisrun<-colnames(spline_dat$x)[i-2]
-if(gdm_test[[3]][,1][i-2]==0) p.prefix<-"P < " else p.prefix<-"P = "
-
-if(spline.thisrun!="nat"){
-x.thisrun<-spline_dat$x[,i-2]
-y.thisrun<-spline_dat$y[,i-2]
-plot(x.thisrun,y.thisrun,ylim=c(range(spline_dat$y)[1],range(spline_dat$y)[2]),cex=0.5,pch=20,xlab=gdm_xlabs$newname[i-2],ylab="Partial ecological distance",type="l")
-
-text(min(x.thisrun),max(spline_dat$y)-0.005,paste("Max. spline = ",round(max(y.thisrun),3),sep=""),adj=0,col="red")
-
-if(max(spline_dat$y)<0.1) ylim.ppos<-(max(spline_dat$y)/3.8)*3 else ylim.ppos<-(max(spline_dat$y)/3.5)*3 
-
-if (gdm_test[[3]][,1][i-2]==0 & gdm_test[[3]][,1][i-2]!=-9999) text(min(x.thisrun),ylim.ppos,paste(p.prefix,"0.001",sep=""),adj=0,col="red") 
-
-if (gdm_test[[3]][,1][i-2]!=0  & gdm_test[[3]][,1][i-2]!=-9999) text(min(x.thisrun),ylim.ppos,paste(p.prefix,round(gdm_test[[3]][,1][i-2],3),sep=""),adj=0,col="red")
-
-if (gdm_test[[3]][,1][i-2]==-9999) text(min(x.thisrun),ylim.ppos,"P > 0.9",adj=0,col="red")
-
-} # close spline not native
-
-if(spline.thisrun=="nat"){
-x.thisrun<-spline_dat$x[,i-2]
-y.thisrun<-spline_dat$y[,i-2]
-
-plot(c(0,1),c(head(y.thisrun,1),tail(y.thisrun,1)),lwd=2,xlab=gdm_xlabs$newname[i-2], ylab="Partial ecological distance",xlim=c(-0.5,1.5),ylim=c(0,max(spline_dat$y)),pch=20,xaxt="n")
-axis(side=1,at=c(0,1),labels=c("same","different"))
-
-text(-0.5,max(spline_dat$y)-0.005,paste("Max. spline = ",round(max(y.thisrun),3),sep=""),adj=0,col="red")
-
-if(max(spline_dat$y)<0.1) ylim.ppos<-(max(spline_dat$y)/3.8)*3 else ylim.ppos<-(max(spline_dat$y)/3.5)*3 
-
-if (gdm_test[[3]][,1][i-2]==0) text(-0.5,ylim.ppos,paste(p.prefix,"0.001",sep=""),adj=0,col="red") else text(-0.5,ylim.ppos,paste(p.prefix,gdm_test[[3]][,1][i-2],sep=""),adj=0,col="red")
-
-} # close spline native
-
-} # close i > 2
-
-if(i==length(spline_dat$x[1,])+2) {
-plot(1:10,1:10,type="n",xlab="",ylab="",xaxt="n",yaxt="n", bty="n")
-text(1,1,paste("Percent deviance\nexplained = ",round(gdm_test[[1]][2,1],2)),adj=0)
-} # close i last
 
 } # close plot all
 

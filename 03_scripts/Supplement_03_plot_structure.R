@@ -1,13 +1,13 @@
 
 # ------------------------------------ #
-# ----------- SUPPLEMENT 04  --------- #
+# ----------- SUPPLEMENT 03  --------- #
 # ------------------------------------ #
 
 # Plot structure results:
 ### Author: Annabel Smith
 
 # load functions:
-invisible(lapply(paste("/Users/annabelsmith/Documents/01_Current/PROJECTS/01_PLANTPOPNET/DATA_and_ANALYSIS/SNP_analysis/GENOTYPE_processing/ANALYSE_GENOME/02_analysis_libraries/",dir("../02_analysis_libraries"),sep=""),function(x) source(x)))
+invisible(lapply(paste("../02_analysis_libraries/",dir("../02_analysis_libraries"),sep=""),function(x) source(x)))
 
 library("RColorBrewer")
 library(rworldmap)
@@ -20,7 +20,7 @@ library("plotrix")
 # SET WORKING DIRECTORIES, FILES AND TIDY DATA:
 
 # The project dir is the location of the structure input files:
-proj_dir<-"/Users/annabelsmith/Documents/01_Current/PROJECTS/01_PLANTPOPNET/DATA_and_ANALYSIS/SNP_analysis/GENOTYPE_processing/ANALYSIS_RESULTS/STRUCTURE/STRUCTURE_DIR/DPlan18_filt6"
+proj_dir<-"../../ANALYSIS_RESULTS/DPlan18_filt6"
 dir(proj_dir)
 
 # The results dir contains the structure results, usually within proj_dir:
@@ -86,6 +86,8 @@ all_dat<-tidy.df(all_dat)
 head(all_dat)
 
 } # close set K
+
+head(all_dat)
 
 #########################################
 ####  	       BAR PLOTS:    		 ####
@@ -168,7 +170,7 @@ str_plot_V8(k.thisrun,cluster.thisrun,site.data,las.opt,yaxs.loc,col.pal,site.la
 } # close SI
 
 #########################################
-##    		 MAP FOR PAPER:  	       ##
+##    		 Data for map:  	       ##
 #########################################
 {
 
@@ -192,7 +194,18 @@ cluster.data<-tidy.df(cluster.data)
 cluster.data$max_p<-apply(cluster.data[,grep("assig",colnames(cluster.data))],1,function(x) which(x==max(x)))
 
 cluster.data<-cbind(cluster.data[,1:2],cluster.data[,grep("assig",colnames(cluster.data))][,unique(cluster.data$max_p)],cluster.data[,(K+3):length(cluster.data)])
-head(cluster.data)
+head(cluster.data); dim(cluster.data)
+
+# optional, aggregate overlapping sites:
+cluster.data$site_code[grep("SW",cluster.data$site_code)]<-"SW"
+cluster.data[grep("SW",cluster.data$site_code),c("latitude","longitude")]
+
+cluster.data$site_code[which(cluster.data$site_code %in% c("BG","ARH"))]<-"NOR"
+cluster.data$site_code[which(cluster.data$site_code %in% c("MN","LK1"))]<-"NUK"
+cluster.data$site_code[which(cluster.data$site_code %in% c("CH","CDF"))]<-"CORK"
+cluster.data$site_code[which(cluster.data$site_code %in% c("IO","SC"))]<-"WIRL"
+cluster.data$site_code[which(cluster.data$site_code %in% c("TW","DP"))]<-"QLD"
+cluster.data$site_code[which(cluster.data$site_code %in% c("MTA","UC"))]<-"NSW"
 
 # aggregate assigment probabilities per site:
 agg_dat<-do.call(cbind,apply(cluster.data[,grep("assig",colnames(cluster.data))],2,function(x)aggregate(x~cluster.data$site_code,cluster.data[,2:length(cluster.data)],sum)))
@@ -210,41 +223,215 @@ r1<-merge(agg_dat,latlong, by.x="site_code", by.y="site_code", all.x=T, all.y=F)
 r1<-tidy.df(r1)
 head(r1); dim(r1)
 
-quartz("",11,6,dpi=70)
-par(mar=c(2,2,2,2))
-par(mar=c(0,0,0,0))
-plot(countriesCoarseLessIslands,lwd=0.5,bg="white",col="grey80",border=F)
-points(pdat$lon, pdat$lat, pch=20, col="grey50", cex=0.5)
+# if combining sites, update lat/long:
+r1[grep("SW",r1$site_code),c("latitude","longitude")]<-cluster.data[grep("SW",cluster.data$site_code)[1],c("latitude","longitude")]
 
-# Plot pies:
-for (i in 1:nrow(r1)){
+r1[grep("NOR",r1$site_code),c("latitude","longitude")]<-cluster.data[grep("NOR",cluster.data$site_code)[1],c("latitude","longitude")]
 
-data.thisrun<-r1[i,]
+r1[grep("NUK",r1$site_code),c("latitude","longitude")]<-cluster.data[grep("NUK",cluster.data$site_code)[1],c("latitude","longitude")]
 
-floating.pie(data.thisrun$longitude, data.thisrun$latitude, x=as.numeric(data.thisrun[grep("assig",colnames(data.thisrun))]),radius=3,  border=NA,col=switch.col)
+r1[grep("CORK",r1$site_code),c("latitude","longitude")]<-cluster.data[grep("CORK",cluster.data$site_code)[1],c("latitude","longitude")]
 
-} # close for i
+r1[grep("WIRL",r1$site_code),c("latitude","longitude")]<-cluster.data[grep("WIRL",cluster.data$site_code)[1],c("latitude","longitude")]
 
-# Plot EUR only:
+r1[grep("QLD",r1$site_code),c("latitude","longitude")]<-cluster.data[grep("QLD",cluster.data$site_code)[1],c("latitude","longitude")]
 
-quartz("",10,8,dpi=70)
-par(mar=c(0,0,0,0))
-plot(countriesCoarseLessIslands,lwd=0.5,bg="white",col="grey",border=F,xlim = c(-10,40),ylim = c(45, 45),asp = 1)
-# need to add pdat below:
-points(pdat$lon, pdat$lat, pch=20, col="grey50", cex=0.5)
-
-for (i in 1:nrow(r1)){
-
-data.thisrun<-r1[i,]
-
-floating.pie(data.thisrun$longitude, data.thisrun$latitude, x=as.numeric(data.thisrun[grep("assig",colnames(data.thisrun))]),radius=2,  border=NA,col=switch.col)
-
-} # close for i
+r1[grep("NSW",r1$site_code),c("latitude","longitude")]<-cluster.data[grep("NSW",cluster.data$site_code)[1],c("latitude","longitude")]
 
 } # close map for paper
 
+#########################################
+####  	       BARS on MAP    		 ####
+#########################################
+
+# Plot bars
+nmlise <- function (x) (x-min(x))/(max(x)-min(x))
+
+switch.col<-brewer.pal(K,"Accent")[c(4,5,1,6,2,3)]
+
+# Plot EUR with bars:
+head(r1); dim(r1)
+head(cluster.data); dim(cluster.data)
+
+r1_eur<-r1[which(r1$site_code %in% unique(cluster.data$site_code[cluster.data$native=="native"])),]
+r1_eur<-tidy.df(r1_eur)
+
+quartz("",10,8,dpi=70)
+par(mar=c(2,2,2,2), fig = c(0,1,0,1))
+par(mar=c(0,0,0,0))
+plot(countriesCoarseLessIslands,lwd=0.5,bg="white",col="grey",border=F,xlim = c(-10,40),ylim = c(45, 45),asp = 1)
+points(pdat$lon, pdat$lat, pch=20, col="grey50", cex=0.5)
+# points(r1_eur$longitude, r1_eur$latitude, pch=20, col="black", cex=2)
+# text(r1_eur$longitude, r1_eur$latitude, labels=r1_eur$site_code, col="black", cex=1, pos=4, offset=0.5)
+
+cds_eur<-data.frame(x=seq(par("usr")[1],par("usr")[2], length.out=10000), y=seq(par("usr")[3],par("usr")[4], length.out=1000))
+cds_eur$xnml<-nmlise(cds_eur$x)
+cds_eur$ynml<-nmlise(cds_eur$y)
+
+bar.length<-600
+bar.height<-30
+x.offs<-150
+y.offs<-10
+
+# X: positive=W, negative=E
+# Y: positive=S, negative=N
+ind.offs<-data.frame(
+site_code=c("CORK","WIRL","ZG","RO_IS","SI","OR_SS","EE","EL","KM"),
+y.offs=c(10,0,10,-15,0,10,0,-10,10),
+x.offs=c(0,150,150,0,-170,0,100,-80,0)
+)
+
+for (i in 1:nrow(r1_eur)){
+
+data.thisrun<-r1_eur[i,]
+assig.thisrun<-data.thisrun[grep("assig",colnames(data.thisrun))]
+
+# Assignment probabilities for this site in the format accepted by barplot:
+x.thisrun<-matrix(data= assig.thisrun,nrow=length(assig.thisrun),ncol=1)
+
+# coordinates:
+x.llc.thisrun<-data.thisrun$longitude
+y.llc.thisrun<-data.thisrun$latitude
+
+if(as.character(data.thisrun$site_code) %in% as.character(ind.offs$site_code)) ofs.thisrun<-ind.offs[which(ind.offs$site_code==as.character(data.thisrun$site_code)),2:3]
+
+# If the site doesn't need an offset, just use the universal offset:
+if(!as.character(data.thisrun$site_code) %in% as.character(ind.offs$site_code)) x.offs.now<-x.offs else x.offs.now<-x.offs+ofs.thisrun$x.offs 
+
+# If the site needs a special offset, add the individual, site-specific offset to the universal:
+if(!as.character(data.thisrun$site_code) %in% as.character(ind.offs$site_code)) y.offs.now<-y.offs else y.offs.now<-y.offs+ofs.thisrun$y.offs 
+
+# Then use this to offset the coords:
+x.scaled<-cds_eur$xnml[which(cds_eur$x>=x.llc.thisrun)[c(1,bar.length)]-x.offs.now]
+y.scaled<-cds_eur$ynml[which(cds_eur$y>y.llc.thisrun)[c(1,bar.height)]-y.offs.now]
+
+par(fig = c(x.scaled, y.scaled),  mar=c(0,0,0,0),new = T) 
+
+barplot(x.thisrun, beside=F, horiz=T, xaxt="n", border=NA, col=switch.col)
+
+} # close for i
+
+# Plot NORTH AMERICA:
+r1_na<-r1[which(r1$site_code %in% unique(cluster.data$site_code[cluster.data$region=="Nth_America"])),]
+r1_na<-tidy.df(r1_na)
+
+quartz("",10,8,dpi=70)
+par(mar=c(2,2,2,2), fig = c(0,1,0,1))
+par(mar=c(0,0,0,0))
+plot(countriesCoarseLessIslands,lwd=0.5,bg="white",col="grey",border=F,xlim = c(-130,-60),ylim = c(45, 45),asp = 1)
+# points(pdat$lon, pdat$lat, pch=20, col="grey50", cex=0.5)
+points(r1$longitude, r1$latitude, pch=20, col="black", cex=2)
+text(r1$longitude, r1$latitude, labels=r1$site_code, col="black", cex=1, pos=4, offset=0.5)
+
+cds_na<-data.frame(x=seq(par("usr")[1],par("usr")[2], length.out=10000), y=seq(par("usr")[3],par("usr")[4], length.out=1000))
+cds_na$xnml<-nmlise(cds_na$x)
+cds_na$ynml<-nmlise(cds_na$y)
+
+bar.length<-600
+bar.height<-30
+x.offs<-0
+y.offs<-0
+
+# X: positive=W, negative=E
+# Y: positive=S, negative=N
+ind.offs<-data.frame(
+site_code=c("ACR","NRM","HAS","JR"),
+y.offs=c(0,50,40,30),
+x.offs=c(0,0,0,0)
+)
+
+for (i in 1:nrow(r1_na)){
+
+data.thisrun<-r1_na[i,]
+assig.thisrun<-data.thisrun[grep("assig",colnames(data.thisrun))]
+
+# Assignment probabilities for this site in the format accepted by barplot:
+x.thisrun<-matrix(data= assig.thisrun,nrow=length(assig.thisrun),ncol=1)
+
+# coordinates:
+x.llc.thisrun<-data.thisrun$longitude
+y.llc.thisrun<-data.thisrun$latitude
+
+if(as.character(data.thisrun$site_code) %in% as.character(ind.offs$site_code)) ofs.thisrun<-ind.offs[which(ind.offs$site_code==as.character(data.thisrun$site_code)),2:3]
+
+# If the site doesn't need an offset, just use the universal offset:
+if(!as.character(data.thisrun$site_code) %in% as.character(ind.offs$site_code)) x.offs.now<-x.offs else x.offs.now<-x.offs+ofs.thisrun$x.offs 
+
+# If the site needs a special offset, add the individual, site-specific offset to the universal:
+if(!as.character(data.thisrun$site_code) %in% as.character(ind.offs$site_code)) y.offs.now<-y.offs else y.offs.now<-y.offs+ofs.thisrun$y.offs 
+
+# Then use this to offset the coords:
+x.scaled<-cds_na$xnml[which(cds_na$x>=x.llc.thisrun)[c(1,bar.length)]-x.offs.now]
+y.scaled<-cds_na$ynml[which(cds_na$y>y.llc.thisrun)[c(1,bar.height)]-y.offs.now]
+
+par(fig = c(x.scaled, y.scaled),  mar=c(0,0,0,0),new = T) 
+
+barplot(x.thisrun, beside=F, horiz=T, xaxt="n", border=NA, col=switch.col)
+
+} # close for i
 
 
+#########################################
+####  	       ALL BARS	    		 ####
+#########################################
+
+quartz("",11,6,dpi=70)  
+par(mar=c(2,2,2,2), fig = c(0,1,0,1))
+par(mar=c(0,0,0,0))
+plot(countriesCoarseLessIslands,lwd=0.5,bg="white",col="grey80",border=F)
+points(pdat$lon, pdat$lat, pch=20, col="grey50", cex=0.5)
+points(r1$longitude, r1$latitude, pch=20, col="black", cex=1)
+
+cds<-data.frame(x=seq(par("usr")[1],par("usr")[2], length.out=1000), y=seq(par("usr")[3],par("usr")[4], length.out=1000))
+cds$xnml<-nmlise(cds$x)
+cds$ynml<-nmlise(cds$y)
+
+for (i in 1:nrow(r1)){
+
+data.thisrun<-r1[i,]
+assig.thisrun<-data.thisrun[grep("assig",colnames(data.thisrun))]
+
+x.thisrun<-matrix(data= assig.thisrun,nrow=length(assig.thisrun),ncol=1)
+x.llc.thisrun<-data.thisrun$longitude
+y.llc.thisrun<-data.thisrun$latitude
+head(cds)
+
+x.scaled<-cds$xnml[which(cds$x>=x.llc.thisrun)[c(1,30)]-10]
+y.scaled<-cds$ynml[which(cds$y>y.llc.thisrun)[c(1,10)]-4]
+
+par(fig = c(x.scaled, y.scaled),  mar=c(0,0,0,0),new = T) 
+
+barplot(x.thisrun, beside=F, horiz=T, xaxt="n", border=NA, col=switch.col)
+
+} # close for i
+
+#########################################
+####  	     INDIVIDUAL BARS   		 ####
+#########################################
+
+# (SAVES TO HARD DRIVE):
+
+head(r1)
+
+pie.dir<-"ALL_BARS_sites_combined"
+dir.create(pie.dir)
+
+for (i in 1:nrow(r1)){
+
+quartz(file=paste(pie.dir,"/",r1$site_code[i],".pdf",sep=""),width=6,height=1,dpi=70,type="pdf")
+# quartz("",width=6,height=1,dpi=70)
+par(mar=c(0,0,0,0),oma=c(0,0,0,0))
+
+data.thisrun<-r1[i,]
+assig.thisrun<-data.thisrun[grep("assig",colnames(data.thisrun))]
+
+x.thisrun<-matrix(data= assig.thisrun,nrow=length(assig.thisrun),ncol=1)
+
+barplot(x.thisrun, beside=F, horiz=T, xaxt="n", border=NA, col=switch.col)
+
+dev.off()
+
+} # close for i
 
 
 

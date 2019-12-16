@@ -6,20 +6,18 @@
 ### process SNP genotypes
 ### Author: Annabel Smith
 
-# Load workspace and functions:
-
+# Load workspace:
 load("../04_workspaces/STEP01_proc_wksp")
-# save.image("../04_workspaces/STEP01_proc_wksp")
 
 # load functions:
-invisible(lapply(paste("/Users/annabelsmith/Documents/01_Current/PROJECTS/01_PLANTPOPNET/DATA_and_ANALYSIS/SNP_analysis/GENOTYPE_processing/ANALYSE_GENOME/02_analysis_libraries/",dir("../02_analysis_libraries"),sep=""),function(x) source(x)))
+invisible(lapply(paste("../02_analysis_libraries/",dir("../02_analysis_libraries"),sep=""),function(x) source(x)))
 
 #########################################
 ####     IMPORT & FORMAT DATA:    	 ####
 #########################################
 {
 
-data.dir<-"/Users/annabelsmith/Documents/01_Current/PROJECTS/01_PLANTPOPNET/DATA_and_ANALYSIS/SNP_analysis/GENOTYPE_processing/DATA_FILES/FULL_DATA_SET"
+data.dir<-"../GENOTYPE_processing/DATA_FILES/FULL_DATA_SET"
 dir(data.dir)
 
 ### ~~~ SINGLE ROW SNP data ~~~ ###
@@ -332,7 +330,7 @@ write(data.thisrun$TrimmedSequence,file="DPlan18_seqs.fa",append=T)
 } # close for
 
 # Import blast results:
-blast_dir<-"/Users/annabelsmith/Documents/01_Current/PROJECTS/01_PLANTPOPNET/DATA_and_ANALYSIS/SNP_analysis/GENOTYPE_processing/ANALYSIS_RESULTS/BLAST"
+blast_dir<-"../GENOTYPE_processing/ANALYSIS_RESULTS/BLAST"
 dir(blast_dir)
 
 # Select lines that bound data:

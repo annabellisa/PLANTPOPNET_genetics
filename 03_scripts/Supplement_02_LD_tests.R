@@ -1,6 +1,6 @@
 
 # ------------------------------------ #
-# ----------- SUPPLEMENT 03  --------- #
+# ----------- SUPPLEMENT 02  --------- #
 # ------------------------------------ #
 
 ### LD TESTS
@@ -10,7 +10,7 @@
 load("../04_workspaces/STEP01_proc_wksp"); rm(list=setdiff(ls(), c("snp_onerow","linf","sdat")))
 
 # load functions:
-invisible(lapply(paste("/Users/annabelsmith/Documents/01_Current/PROJECTS/01_PLANTPOPNET/DATA_and_ANALYSIS/SNP_analysis/GENOTYPE_processing/ANALYSE_GENOME/02_analysis_libraries/",dir("../02_analysis_libraries"),sep=""),function(x) source(x)))
+invisible(lapply(paste("../02_analysis_libraries/",dir("../02_analysis_libraries"),sep=""),function(x) source(x)))
 
 # Start with full data set, snp_onerow
 

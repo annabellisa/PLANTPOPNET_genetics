@@ -7,14 +7,14 @@
 ### Author: Annabel Smith
 
 # load functions:
-invisible(lapply(paste("/Users/annabelsmith/Documents/01_Current/PROJECTS/01_PLANTPOPNET/DATA_and_ANALYSIS/SNP_analysis/GENOTYPE_processing/ANALYSE_GENOME/02_analysis_libraries/",dir("../02_analysis_libraries"),sep=""),function(x) source(x)))
+invisible(lapply(paste("../02_analysis_libraries/",dir("../02_analysis_libraries"),sep=""),function(x) source(x)))
 
 load("../04_workspaces/STEP05_env_wksp")
-# library("ecodist")
 library("gdm")
-library("AICcmodavg")
 library("adegenet")
 library("poppr")
+library("AICcmodavg")
+library(boot)
 
 #########################################
 ####  	     	  DATA: 	   		 ####
@@ -61,19 +61,6 @@ gd<-gd[-which(gd$site %in% c("CAT","CCT","CTP")),]
 gd<-gd[-which(gd$max_n<7),]
 gd<-tidy.df(gd)
 head(gd,2); dim(gd)
-
-# **** ---- indiv level genetic diversity:
-ind<-read.table(paste(dat_dir,"indiv_het.txt",sep="/"),header=T)
-ind<-ind[-grep("OG",ind$site),]
-ind<-ind[-which(ind$site %in% c("CAT","CCT","CTP")),]
-ind<-ind[which(ind$site %in% gd$site),]
-ind$ind_het<-as.numeric(as.character(ind$ind_het))
-ind<-tidy.df(ind)
-head(ind)
-
-# Add average individual het to genetic diversity data:
-gd$ih_avg<-tapply(ind$ind_het,ind$site,mean)
-head(gd,3); dim(gd)
 
 # ** -- Add genetic diversity data site data:
 gds<-merge(sdat,gd,by.x="site_code",by.y="site",all.x=T,all.y=F)
@@ -148,7 +135,7 @@ demo_resp<-c("Y0_ros_m2","emp_pgr_ros","ros_reprod_m2")
 
 enviro_pred<-colnames(gds)[colnames(gds) %in% c("mt","ap","sp","st")]
 
-gen_resp<-colnames(gds)[colnames(gds) %in% c("He","ar","ar_adapt")]
+gen_resp<-colnames(gds)[colnames(gds) %in% c("ar","ar_adapt")]
 
 all_resp<-c(demo_resp,gen_resp)
 
@@ -158,63 +145,16 @@ head(gds,2); dim(gds)
 # **** ---- Add meta data:
 env_rows<-which(!is.na(gds$mt))
 dem_rows<-which(!is.na(gds$Y0_ros_m2))
-gen_rows<-which(!is.na(gds$He))
+gen_rows<-which(!is.na(gds$ar))
 
 gds$dem_env<-ifelse(rownames(gds) %in% as.numeric(names(table(c(env_rows,dem_rows))[which(table(c(env_rows,dem_rows))==2)])),1,0)
 gds$gen_dem<-ifelse(rownames(gds) %in% as.numeric(names(table(c(gen_rows,dem_rows))[which(table(c(gen_rows,dem_rows))==2)])),1,0)
 gds$gen_env<-ifelse(rownames(gds) %in% as.numeric(names(table(c(gen_rows,env_rows))[which(table(c(gen_rows,env_rows))==2)])),1,0)
 
-gds[,c("site_code","Y0_ros_m2","He","ar","mt","dem_env","gen_dem","gen_env")]
-
-# **** ---- SCALE environmental predictors:
-gdsc<-cbind(gds[,1:which(colnames(gds)=="longitude")],apply(gds[,c("mt","ap","sp","st")],2,scale), gds[,which(colnames(gds)=="Y0_ros_m2"):length(gds)])
-head(gdsc,3); dim(gdsc)
-head(gds,3); dim(gds)
-
-# Check distributions of responses:
-{
-quartz(title="",width=6,height=4, dpi=100)
-par(mfrow=c(2,3),mgp=c(2.5,1,0),oma=c(0,0,0,0),mar=c(5,4,2,1))
-
-for (i in 1:length(all_resp)){
-resp.thisrun<-all_resp[i]
-hist(gds[,resp.thisrun],main=resp.thisrun,xlab="")
-} # close for
-
-# Genetic responses OK
-# Emp pgr OK
-
-# NOT OK:
-# density
-# reprod_m2
-
-# LOG offenders:
-to_log<-colnames(gdsc)[c(grep("Y0",colnames(gdsc)),grep("reprod_m2",colnames(gdsc)))]
-dont_log<-colnames(gdsc)[-which(colnames(gdsc) %in% to_log)]
-gdsc<-cbind(gdsc[,dont_log],apply(gdsc[,to_log],2,function(x) log(x+1)))
-head(gdsc,3)
-
-# ID logged
-resp.df<-data.frame(resp=all_resp)
-resp.df<-data.frame(resp=all_resp,logged=ifelse(all_resp %in% to_log, 1,0))
-
-# Re-check:
-quartz(title="",width=6,height=4, dpi=100)
-par(mfrow=c(2,3),mgp=c(2.5,1,0),oma=c(0,0,0,0),mar=c(5,4,2,1))
-
-for (i in 1:length(all_resp)){
-
-resp.thisrun<-all_resp[i]
-
-if(resp.df$logged[i]==0) main.thisrun<-resp.thisrun else main.thisrun<-paste("log(",resp.thisrun,"+1)",sep="")
-
-hist(gdsc[,resp.thisrun],main= main.thisrun,xlab="")
-
-} # close for
-
-} # close check response
+head(gds,2); dim(gds)
 
 save.image("../04_workspaces/STEP05_env_wksp")	
+
 } # close data
 
 #########################################
@@ -225,18 +165,16 @@ save.image("../04_workspaces/STEP05_env_wksp")
 # nrow=53
 head(sdt,3); dim(sdt)
 
-# gds: UNSCALED DATA genetic diversity, site, environment and demography:
+# gds: genetic diversity, site, environment and demography, all sites, unscaled:
 # nrow=63
 head(gds,3); dim(gds)
-
-# gdsc: SCALED DATA genetic diversity, site, environment and demography, non-normal responses LOGGED:
-# nrow=63
-head(gdsc,3); dim(gdsc)
 
 #########################################
 ## 				 AMOVA				   ##
 #########################################
 {
+
+load("../04_workspaces/Supp_amova")
 	
 ###-- genind objects:
 # See parameter files in gp_dir for filters
@@ -420,7 +358,7 @@ plot.pw("env_nn",nn_env.cor,nn_env.names)
 # Individual enviro variables:
 
 # The data format for GDM is close to the merged data (m1df) that was used above to create the pw_pop_stats. 
-head(m1df,2)
+head(m1df,2); dim(m1df)
 # Remove "nat_dist" in the colname:
 m2df<-m1df
 m2df<-m2df[,-grep("nat_dist",colnames(m2df))]
@@ -570,6 +508,40 @@ save.image("../04_workspaces/STEP05_env_wksp")
 
 } # close fit
 
+# bootstrap deviance explained
+{
+
+head(gdm_all,3)
+head(gdm_eur,3)
+head(gdm_nn,3)
+
+# dev explained from the original fit:
+gdmALL$explained
+gdmEUR$explained
+gdmNN$explained
+
+# BOOTSTRAP function for GDM:
+stat_gdm <- function (dat, w) {
+gdm_test1 <- gdm(dat[w,], geo=GEO)
+gdm_test1$explained
+}
+
+gdm_all_boot <- boot(gdm_all, stat_gdm, R=10000)
+# plot(gdm_all_boot)
+boot.ci(gdm_all_boot,type=c("norm","basic","perc","bca"))
+
+gdm_eur_boot <- boot(gdm_eur, stat_gdm, R=10000)
+# plot(gdm_eur_boot)
+boot.ci(gdm_eur_boot,type=c("norm","basic","perc","bca"))
+
+gdm_nn_boot <- boot(gdm_nn, stat_gdm, R=10000)
+# plot(gdm_nn_boot)
+boot.ci(gdm_nn_boot, type=c("norm","basic","perc","bca"))
+
+save.image("../04_workspaces/STEP05_env_wksp")
+
+} # close bootstrap
+
 # xlabs:
 {
 
@@ -584,9 +556,15 @@ nn_xlabs<-format_gdm_xlabs(nnSplines)
 # Test importance
 {
 
-allTest <- gdm.varImp(gdm_all, geo=T, nPerm=50, parallel=T, cores=10)
-eurTest <- gdm.varImp(gdm_eur, geo=T, nPerm=50, parallel=T, cores=10)
-nnTest <- gdm.varImp(gdm_nn, geo=T, nPerm=50, parallel=T, cores=10)
+allTest <- gdm.varImp(gdm_all, geo=T, nPerm=500, parallel=T, cores=10)
+
+save.image("../04_workspaces/STEP05_env_wksp")
+
+eurTest <- gdm.varImp(gdm_eur, geo=T, nPerm=500, parallel=T, cores=10)
+
+save.image("../04_workspaces/STEP05_env_wksp")
+
+nnTest <- gdm.varImp(gdm_nn, geo=T, nPerm=500, parallel=T, cores=10)
 
 save.image("../04_workspaces/STEP05_env_wksp")
 
@@ -610,15 +588,9 @@ p.adjust(nnTest[[3]][,1],method="bonferroni")
 
 #### PLOT ------------------------------------------
 
-# Don't use plot_gdm, there is an unfixed bug, use plot_gdm_simp, or do it manually
-
 # Individual environmental vars:
 {
 ### FULL DATA SET:
-
-quartz("",8,6,dpi=90)
-par(mfrow=c(3,4),mar=c(4,5,1,0),oma=c(0,0,0,1),mgp=c(2.3,1,0),xpd=NA)
-plot_gdm(allSplines,gdmALL,all_xlabs,allTest)
 
 # simplified for SI:
 quartz("",6,4,dpi=90)
@@ -627,18 +599,10 @@ plot_gdm_simp(allSplines,gdmALL,all_xlabs,allTest,adjust_p=T)
 
 ### EUROPE & NON-NATIVE:
 
-quartz("",8,6,dpi=90)
-par(mfrow=c(3,4),mar=c(4,5,1,0),oma=c(0,0,0,1),mgp=c(2.3,1,0),xpd=NA)
-plot_gdm(eurSplines,gdmEUR,eur_xlabs,eurTest)
-
 # simplified for SI:
 quartz("",6,4,dpi=90)
 par(mfrow=c(2,3),mar=c(4,5,1,0),oma=c(0,0,0,1),mgp=c(2.3,1,0),xpd=NA)
 plot_gdm_simp(eurSplines,gdmEUR,eur_xlabs,eurTest,adjust_p=T)
-
-quartz("",8,6,dpi=90)
-par(mfrow=c(3,4),mar=c(4,5,1,0),oma=c(0,0,0,1),mgp=c(2.3,1,0),xpd=NA)
-plot_gdm(nnSplines,gdmNN,nn_xlabs,nnTest)
 
 # simplified for SI:
 quartz("",6,4,dpi=90)
@@ -674,7 +638,7 @@ par(mfrow=c(1,2),mar=c(3,4,1,0),oma=c(0,0,1,1),mgp=c(2,0.8,0),xpd=NA)
 # (a) Europe geographic
 plot(x.now,y.now,ylim=c(range(meur$fst)[1],0.5),cex=0.5,pch=20,xlab="",ylab=expression("Genetic distance ("*italic("F")[ST]*")"),type="n",las=1,col="red",lwd=2,cex.axis=0.7,cex.lab=0.8, xlim=c(0,3),xaxt="n")
 
-title(xlab="Geographic distance (,000 km)",mgp=c(1.6,1,0),cex.lab=0.8)
+title(xlab="Geographic distance (1,000 km)",mgp=c(1.6,1,0),cex.lab=0.8)
 mtext("(a)",side=2, las=1,line=1, at=0.57, cex=0.8, adj=0)
 points((meur$geog_dist/100000)/10, meur$fst,pch=20, cex=0.3)
 axis(side=1, at=0:3, labels=0:3,cex.axis=0.7, mgp=c(2.3,0.5,0))
@@ -682,7 +646,7 @@ axis(side=1, at=0:3, labels=0:3,cex.axis=0.7, mgp=c(2.3,0.5,0))
 # (b) Europe precip
 plot(x.sp,y.sp,ylim=c(range(meur$fst)[1],0.5),cex=0.5,pch=20,xlab="",ylab=expression("Genetic distance ("*italic("F")[ST]*")"),type="n",las=1,col="red",lwd=2,xlim=range(min(c(sp_dist)),max(c(sp_dist))),cex.axis=0.7,cex.lab=0.8,xaxt="n")
 
-title(xlab="Precipitation seasonality (mm)",mgp=c(1.6,1,0),cex.lab=0.8)
+title(xlab="Precipitation seasonality",mgp=c(1.6,1,0),cex.lab=0.8)
 mtext("(b)",side=2, las=1,line=1, at=0.57, cex=0.8, adj=0)
 points(sp_dist,meur$fst,pch=20, cex=0.3)
 axis(side=1, cex.axis=0.7, mgp=c(2.3,0.5,0))
@@ -697,11 +661,7 @@ axis(side=1, cex.axis=0.7, mgp=c(2.3,0.5,0))
 {
 
 ### DATA SET UP:
-{
-
-# MAIN DATA:
 head(gds,2); dim(gds)
-head(gdsc,2); dim(gds)
 
 # Use same base data for all three stages:
 
@@ -709,54 +669,28 @@ head(gdsc,2); dim(gds)
 # Stage 1: genetic ~ environment
 # Stage 2: genetic ~ demography
 
-# nobs==42 (without outliers)
-# emp_pgr is NOT comparable with AIC (fewer obs), but we're only using AIC for within responses, not across models
+gds_upd<-gds[which(gds$gen_dem==1),]
+gds_upd<-tidy.df(gds_upd)
+head(gds_upd,3); dim(gds_upd)
 
-# unscaled:
-st1<-gds[which(gds$gen_dem==1),]
-st1<-tidy.df(st1)
+# Log fecundity:
+gds_upd$LOG_ros_reprod_m2<-log(gds_upd$ros_reprod_m2+1)
 
-# scaled:
-st1sc<-gdsc[which(gdsc$gen_dem==1),]
-st1sc<-tidy.df(st1sc)
+# Scale (normalise) environmental predictors:
+gds_upd$mt_sc<-as.numeric(scale(gds_upd$mt))
+gds_upd$st_sc<-as.numeric(scale(gds_upd$st))
+gds_upd$ap_sc<-as.numeric(scale(gds_upd$ap))
+gds_upd$sp_sc<-as.numeric(scale(gds_upd$sp))
 
-# UNLOG demographic predictors and SCALE:
-demo_resp
-st1sc[,c("Y0_ros_m2","ros_reprod_m2")]<-st1[,c("Y0_ros_m2","ros_reprod_m2")]
-st1sc[,which(colnames(st1sc) %in% demo_resp)]<-apply(st1sc[,which(colnames(st1sc) %in% demo_resp)],2,scale)
+# and demographic predictors:
+gds_upd$Y0_ros_m2_sc<-as.numeric(scale(gds_upd$Y0_ros_m2))
+gds_upd$emp_pgr_ros_sc<-as.numeric(scale(gds_upd$emp_pgr_ros))
+gds_upd$LOG_ros_reprod_m2_sc<-as.numeric(scale(gds_upd$LOG_ros_reprod_m2))
 
-# Check for outliers in predictors:
-preds_all<-c(enviro_pred,demo_resp)
+head(gds_upd,3); dim(gds_upd)
 
-quartz(title="",width=6,height=4, dpi=90, pointsize=14)
-par(mfrow=c(2,4),mgp=c(2.5,1,0),oma=c(0,0,0.5,0),mar=c(2,4,1,1.5))
-
-for (i in 1:length(preds_all)){
-pred.now<-preds_all[i]
-boxplot(st1sc[,pred.now],main=pred.now)
-} # close for
-
-# Remove single reprod outlier:
-reprod.outl<-which(st1sc$ros_reprod_m2>3)
-st1sc<-st1sc[-reprod.outl,]
-st1sc<-tidy.df(st1sc)
-st1<-st1[-reprod.outl,]
-st1<-tidy.df(st1)
-
-# Remove single density outlier:
-dens.outl<-which(st1sc$Y0_ros_m2>2)
-st1sc<-st1sc[-dens.outl,]
-st1sc<-tidy.df(st1sc)
-st1<-st1[-dens.outl,]
-st1<-tidy.df(st1)
-
-# gdsc has scaled environmental predictors and unscaled demographic responses. Non-normal responses are logged: use for demog ~ environment:
-env_sc<-gdsc[which(gdsc$site_code %in% st1sc$site_code),]
-env_sc<-tidy.df(env_sc)
-env_unsc<-gds[which(gds$site_code %in% st1$site_code),]
-env_unsc<-tidy.df(env_unsc)
-
-} # close data set-up
+# suffix "_sc" = scaled predictors:
+# gds_upd includes scaled  environmental predictors (and unscaled enviro vars for plotting), unscaled demographic responses (Y0_ros_m2, LOG_ros_reprod_m2, emp_pgr_ros) and scaled demographic predictors (Y0_ros_m2_sc, LOG_ros_reprod_m2_sc, emp_pgr_ros_sc). 
 
 ### MODEL SET UP:
 
@@ -764,25 +698,26 @@ env_unsc<-tidy.df(env_unsc)
 # Stage 1: genetic ~ environment 
 # Stage 2: genetic ~ demography
 
-# DATA FOR GENETIC RESPONSES:
-head(st1,2); dim(st1) # nothing scaled
-head(st1sc,2); dim(st1sc) # all predictors scaled, use for genetic ~ environment and genetic ~ demography
+head(gds_upd,3); dim(gds_upd)
 
-# DATA FOR DEMOGRAPHIC RESPONSES:
-# environmental predictors scaled, demographic responses not scaled, use for demog ~ environment:
-head(env_sc,3); dim(env_sc) 
-head(env_unsc,3); dim(env_unsc)
+# demographic response
+demo_resp<-c("Y0_ros_m2", "emp_pgr_ros", "LOG_ros_reprod_m2")
+# genetic response
+gen_resp<-c("ar","ar_adapt")
 
-demo_resp # demographic response
-gen_resp # genetic response
+# enviro predictors
+enviro_pred<-paste(c("mt","st","ap","sp"),"_sc",sep="")
 
-preds_all # all predictors
-enviro_pred # enviro predictors
+# demo predictors
+demo_pred<-c("Y0_ros_m2_sc", "emp_pgr_ros_sc","LOG_ros_reprod_m2_sc")
+# all predictors
+preds_all<-c(enviro_pred, demo_pred)
 
-mod_tab<-data.frame(type=c(rep("dem_env",12),rep("gd_env",8)),response=c(rep(demo_resp,each=4),rep(gen_resp[2:3],each=4)),predictor=enviro_pred,sc_data=c(rep("env_sc",12),rep("st1sc",8)), unsc_data=c(rep("env_unsc",12),rep("st1",8)))
+mod_tab<-data.frame(type=c(rep("dem_env",12),rep("gd_env",8)),response=c(rep(demo_resp,each=4),rep(gen_resp,each=4)),predictor=enviro_pred)
+
 mod_tab<-apply(mod_tab, 2, as.character)
 
-mod_tab2<-data.frame(type=rep("gd_dem",6),response=rep(gen_resp[2:3],each=3), predictor=demo_resp,sc_data=rep("st1sc",6),unsc_dat=rep("st1",6))
+mod_tab2<-data.frame(type=rep("gd_dem",6),response=rep(gen_resp,each=3), predictor=demo_pred)
 mod_tab2<-apply(mod_tab2, 2, as.character)
 mod_tab2
 
@@ -790,9 +725,7 @@ mod_tab<-data.frame(rbind(mod_tab,mod_tab2))
 mod_tab$mod_name<-paste(mod_tab$response, mod_tab$predictor, sep="_")
 head(mod_tab)
 
-# Scaled data
-head(env_sc,3); dim(env_sc) 
-head(st1sc,2); dim(st1sc)
+head(gds_upd,3); dim(gds_upd)
 
 ### RUN MODELS:
 
@@ -805,14 +738,14 @@ for (i in 1:nrow(mod_tab)){
 
 resp.thisrun<-as.character(mod_tab$response[i])
 pred.thisrun<-as.character(mod_tab$predictor[i])
-data.thisrun<-get(as.character(mod_tab$sc_data[i]))
+data.thisrun<-gds_upd
 head(data.thisrun,2); dim(data.thisrun)
 
 mod_null<-lm(get(resp.thisrun)~1,data=data.thisrun)
 mod_nat<-lm(get(resp.thisrun)~native,data=data.thisrun)
-mod_pred<-lm(get(resp.thisrun)~get(pred.thisrun),data=env_sc)
-mod_add<-lm(get(resp.thisrun)~get(pred.thisrun)+native,data=env_sc)
-mod_int<-lm(get(resp.thisrun)~get(pred.thisrun)*native,data=env_sc)
+mod_pred<-lm(get(resp.thisrun)~get(pred.thisrun),data=data.thisrun)
+mod_add<-lm(get(resp.thisrun)~get(pred.thisrun)+native,data=data.thisrun)
+mod_int<-lm(get(resp.thisrun)~get(pred.thisrun)*native,data=data.thisrun)
 
 # AICc:
 # If delta is negative, it didn't improve the model, for positive and negative AIC values
@@ -853,6 +786,13 @@ aic.df$rank[within.best]<-"supported"
 	
 	}
 
+aic_wt<-data.frame(aictab(list(mod_null,mod_nat,mod_pred,mod_add,mod_int),modnames=c("null","nat","pred","add","int")))[,c("Modnames","AICcWt","LL","ModelLik","K")]
+
+aic.df<-merge(aic.df, aic_wt, by.x="model", by.y="Modnames", all.x=T, all.y=F)
+
+aic.df<-aic.df[match(c("null","nat","pred","add","int"),aic.df$model),]
+aic.df<-tidy.df(aic.df)
+
 aic.store[[i]]<-aic.df
 
 # store coefficients for all supported models:
@@ -888,13 +828,11 @@ head(aic.res)
 coef.res<-do.call(rbind,coef.store)
 head(coef.res)
 
-# write.table(coef.res, "coef.res.txt",row.names=F, quote=F, sep="\t")
+# write.table(coef.res,"coef.res.txt",row.names=F, quote=F, sep="\t")
 
 # -------------------- #
 # BEST models:
 # -------------------- #
-
-### GET ESTIMATES:
 
 best.mods<-aic.res[which(aic.res$rank=="best"),]
 best.mods<-best.mods[-which(best.mods$model=="null"),]
@@ -902,38 +840,75 @@ best.mods<-best.mods[-which(best.mods$model=="nat"),]
 best.mods<-tidy.df(best.mods)
 best.mods
 
-mt2<-mod_tab[,c("mod_name","sc_data","unsc_data")]
-head(mt2)
-
-best.mods<-merge(best.mods, mt2, by="mod_name")
-
-# arrange for plotting:
-best.mods<-best.mods[c(4,3,1,2),]
+# Remove the precip seasonality model - we cannot interpret this interaction because the native and non-native ranges don't have comparable values. Include in the SI instead. 
+sp_reprod<-best.mods[which(best.mods$predictor=="sp_sc"),]
+best.mods<-best.mods[-which(best.mods$predictor=="sp_sc"),]
 best.mods<-tidy.df(best.mods)
 best.mods
 
-# Get estimates from model for plots:
+### BOOTSTRAP interaction terms:
+
+library(boot)
+
+# The best models for adaptive genetic diversity were interactive (and for neutral~ap). Would this be the case if native and native datasets had equal sample sizes?
+
+int.mods<-best.mods[which(best.mods$model=="int"),]
+int.mods<-tidy.df(int.mods)
+int.mods
+
+head(gds_upd,3); dim(gds_upd)
+
+boot_dat1<-gds_upd[,c("site_code","native","st","st_sc","ap","ap_sc","ar","ar_adapt")]
+head(boot_dat1,3); dim(boot_dat1)
+table(boot_dat1$native)
+
+# BOOTSTRAP function for genetic diversity models:
+# Statistic is interactive model coefficient:
+stat <- function (dat, w, resp, pred) {
+form1<-as.formula(paste(resp,"~",pred,"*native",sep=""))
+m1_int<-lm(form1,data=dat[w,])
+summary(m1_int)$coefficients[4,1]
+}
+
+# Models to bootstrap:
+int.mods
+
+ar_ap <- boot(boot_dat1, stat, resp="ar", pred="ap_sc", R=10000, strata=boot_dat1$native)
+# plot(ar_ap)
+boot.ci(ar_ap, type=c("norm","basic","perc","bca"))
+
+adapt_st <- boot(boot_dat1, stat, resp="ar_adapt", pred="st_sc", R=10000, strata=boot_dat1$native)
+# plot(adapt_st)
+boot.ci(adapt_st, type=c("norm","basic","perc","bca"))
+
+adapt_ap <- boot(boot_dat1, stat, resp="ar_adapt", pred="ap_sc", R=10000, strata=boot_dat1$native)
+# plot(adapt_ap)
+boot.ci(adapt_ap, type=c("norm","basic","perc","bca"))
+save.image("../04_workspaces/STEP05_env_wksp")
+
+### GET ESTIMATES:
 
 preds.store<-list()
+
+head(gds_upd,3); dim(gds_upd)
 
 for (i in 1:nrow(best.mods)){
 
 resp.thisrun<-as.character(best.mods$response[i])
 pred.thisrun<-as.character(best.mods$predictor[i])
-scdat.thisrun<-get(as.character(best.mods$sc_data[i]))
-head(scdat.thisrun,2); dim(scdat.thisrun)
+
 range.thisrun<-NULL
 
 mod.thisrun<-NULL
 
 type.thisrun<-as.character(best.mods$model[i])
 
-if(type.thisrun=="add") mod.thisrun<-lm(get(resp.thisrun)~get(pred.thisrun)+native,data=scdat.thisrun)
-if(type.thisrun=="int") mod.thisrun<-lm(get(resp.thisrun)~get(pred.thisrun)*native,data=scdat.thisrun)
+if(type.thisrun=="add") mod.thisrun<-lm(get(resp.thisrun)~get(pred.thisrun)+native,data=gds_upd)
+if(type.thisrun=="int") mod.thisrun<-lm(get(resp.thisrun)~get(pred.thisrun)*native,data=gds_upd)
 
 summary(mod.thisrun)
 
-nd.thisrun<-data.frame(native=c(rep("native",50),rep("non_native",50)),pred=seq(min(scdat.thisrun[,pred.thisrun],na.rm=T),max(scdat.thisrun[,pred.thisrun],na.rm=T),length.out=50))
+nd.thisrun<-data.frame(native=c(rep("native",50),rep("non_native",50)),pred=seq(min(gds_upd[,pred.thisrun],na.rm=T),max(gds_upd[,pred.thisrun],na.rm=T),length.out=50))
 colnames(nd.thisrun)[2]<-pred.thisrun
 head(nd.thisrun)
 pr1<-predict(mod.thisrun,newdata=nd.thisrun,se.fit=T)
@@ -951,7 +926,7 @@ if(is.null(range.thisrun)==F){
 
 summary(mod.thisrun)
 
-nd2<-data.frame(native=c(rep("native",1),rep("non_native",1)),pred=mean(scdat.thisrun[,pred.thisrun],na.rm=T))
+nd2<-data.frame(native=c(rep("native",1),rep("non_native",1)),pred=mean(gds_upd[,pred.thisrun],na.rm=T))
 colnames(nd2)[2]<-pred.thisrun
 pr3<-predict(mod.thisrun,newdata=nd2,se.fit=T)
 pr4<-data.frame(nd2,fit=pr3$fit,se=pr3$se.fit)
@@ -971,17 +946,17 @@ save.image("../04_workspaces/STEP05_env_wksp")
 
 ### PLOT:
 
-best.mods # models to plot (n=4)
-preds.store # environmental estimates (n=3)
+best.mods # models to plot
+preds.store # environmental estimates
 
 plot.data<-best.mods
-plot.data$resp_lab<-c(rep("Population growth rate",1),rep("Neutral genetic diversity",1),rep("Adaptive genetic diversity",2))
-plot.data$pred_lab<-c(rep("Mean temperature",1),rep("Temperature seasonality",1),rep("Mean precipitation (mm)",1),rep("Temperature seasonality",1))
-plot.data$space_after<-c(rep("no",4))
-plot.data$lett<-c("a","b","c","d")
+plot.data$resp_lab<-c(rep("Population growth rate",1),rep("log(Reprod. effort / m2)",1),rep("Neutral genetic diversity",2),rep("Adaptive genetic diversity",2))
+plot.data$pred_lab<-c(rep("Mean temperature",2),rep("Temperature seasonality",1),rep("Mean precipitation (mm)",1),rep("Temperature seasonality",1),rep("Mean precipitation (mm)",1))
+plot.data$space_after<-c(rep("no",6))
+plot.data$lett<-letters[1:6]
 
-quartz(title="",width=8,height=6.5, dpi=90, pointsize=16.5)
-par(mfrow=c(2,2),mgp=c(2.7,0.9,0),oma=c(0,0,0.5,6.5),mar=c(4.5,4,1.5,1.7))
+quartz(title="",width=7.5,height=9, dpi=70, pointsize=20)
+par(mfrow=c(3,2),mgp=c(2.7,0.9,0),oma=c(0,0,0.5,6.5),mar=c(4.5,4,1.5,1.7))
 
 for (i in 1:nrow(plot.data)){
 
@@ -989,12 +964,17 @@ resp.thisrun<-as.character(plot.data$response[i])
 pred.thisrun<-as.character(plot.data$predictor[i])
 est.thisrun<-preds.store[[i]]
 
-scdat.thisrun<-get(as.character(plot.data$sc_data[i]))
-unscdat.thisrun<-get(as.character(plot.data$unsc_data[i]))
-head(scdat.thisrun,2)
+# Scaled data:
+scdat.thisrun<-gds_upd
 
-raw.scaled<-scdat.thisrun[,c(which(colnames(scdat.thisrun) %in% c("site","native","mt","st","ap","sp")),which(colnames(scdat.thisrun)==resp.thisrun))]
-raw.unscaled<-unscdat.thisrun[,c(which(colnames(unscdat.thisrun) %in% c("site","native","mt","st","ap","sp")),which(colnames(unscdat.thisrun)==resp.thisrun))]
+# Unscaled data:
+if(gregexpr("_sc",pred.thisrun)[[1]][1]>0) unsc_x<-substr(pred.thisrun,1,nchar(pred.thisrun)-3) else unsc_x<-pred.thisrun
+
+unscdat.thisrun<-gds_upd[,c(resp.thisrun,pred.thisrun)]
+head(unscdat.thisrun,2)
+
+raw.scaled<-scdat.thisrun[,c(which(colnames(scdat.thisrun) %in% c("site_code","native", pred.thisrun)),which(colnames(scdat.thisrun)==resp.thisrun))]
+raw.unscaled<-scdat.thisrun[,c(which(colnames(scdat.thisrun) %in% c("site_code","native",unsc_x)),which(colnames(scdat.thisrun)==resp.thisrun))]
 head(raw.scaled); dim(raw.scaled)
 head(raw.unscaled); dim(raw.unscaled)
 
@@ -1002,29 +982,46 @@ yl.now<-c(min(c(min(est.thisrun$lci),min(raw.scaled[,resp.thisrun],na.rm=T))),ma
 
 head(est.thisrun)
 
-plot(est.thisrun[est.thisrun$native=="native",which(colnames(est.thisrun)=="predictor")],est.thisrun$fit[est.thisrun$native=="native"],ylim=yl.now,type="n",bty="l",xlab="",ylab=plot.data$resp_lab[i],xaxt="n", las=1,cex.axis=0.8)
+plot(est.thisrun[est.thisrun$native=="native",which(colnames(est.thisrun)=="predictor")],est.thisrun$fit[est.thisrun$native=="native"],ylim=yl.now,type="n",bty="l",xlab="",ylab="",xaxt="n", las=1,cex.axis=0.8)
 
+ylab.now<-plot.data$resp_lab[i]
+
+if(resp.thisrun!="LOG_ros_reprod_m2") title(ylab=ylab.now) else title(ylab=bquote("log(reprod. effort/m"^2*")"))
+
+if(plot.data$mod_name[i]!="LOG_ros_reprod_m2_sp_sc"){
 pg.ci("predictor","est.thisrun",x.subset="native",colour=rgb(0,0,0,0.1))
 lines(est.thisrun[est.thisrun$native=="native",which(colnames(est.thisrun)=="predictor")],est.thisrun$fit[est.thisrun$native=="native"],lty=1)
 lines(est.thisrun[est.thisrun$native=="non_native",which(colnames(est.thisrun)=="predictor")],est.thisrun$fit[est.thisrun$native=="non_native"],lty=2,col="red")
+}
 
 points(raw.scaled[raw.scaled$native=="native",pred.thisrun],raw.scaled[raw.scaled$native=="native",resp.thisrun],col="black",cex=0.5, pch=20)
 points(raw.scaled[raw.scaled$native=="non_native",pred.thisrun],raw.scaled[raw.scaled$native=="non_native",resp.thisrun],col="red",cex=0.5, pch=20)
 
-if(resp.thisrun=="emp_pgr_ros") arrows(-10,0,2.5,0,length=0,lwd=0.3,col="black")
-
 xax<-seq(round(min(raw.scaled[,pred.thisrun]),0),round(max(raw.scaled[,pred.thisrun]),0),length.out=5)
 head(raw.unscaled)
-xaxl<-round(seq(round(min(raw.unscaled[,pred.thisrun]),0),round(max(raw.unscaled[,pred.thisrun]),0),length.out=5),0)
+xaxl<-round(seq(round(min(raw.unscaled[,unsc_x]),0),round(max(raw.unscaled[,unsc_x]),0),length.out=5),0)
 
-axis(side=1, at=xax, labels=xaxl, cex.axis=0.8)
+if(unsc_x=="ap") xaxl<-round(xaxl,-2)
+
+if(unsc_x=="mt") 
+{
+new.axis<-seq(0,round(max(raw.unscaled[,unsc_x]),0),length.out=5)
+
+cantthink<-c(raw.unscaled[,unsc_x])
+new.pos<-predict.lm(lm(raw.scaled[,pred.thisrun]~ cantthink),newdata=data.frame(cantthink=new.axis))
+
+axis(side=1, at=new.pos, labels=new.axis, cex.axis=0.8)
+
+} # close new axis
+
+if(unsc_x!="mt") axis(side=1, at=xax, labels=xaxl, cex.axis=0.8)
 
 xlab.thirun<-as.character(plot.data$pred_lab[i])
 if(length(grep("emperatu",xlab.thirun))==0) title(xlab= xlab.thirun,mgp=c(2.2,1,0)) else title(xlab=bquote(.(xlab.thirun)*" ("*degree*"C)"),mgp=c(2.2,1,0))
 
-mtext(paste("(",plot.data$lett[i],")",sep=""),side=2,las=1,line=1.6,adj=0,cex=0.9,at=par("usr")[4]+((par("usr")[4]-par("usr")[3])/7))
+mtext(paste("(",plot.data$lett[i],")",sep=""),side=2,las=1,line=1.6,adj=0,cex=0.8,at=par("usr")[4]+((par("usr")[4]-par("usr")[3])/7))
 
-# if(plot.data$space_after[i]=="yes") blankplot()
+if(plot.data$space_after[i]=="yes") blankplot()
 
 # Add general legend:
 par(xpd=NA)
@@ -1042,17 +1039,17 @@ head(aic.res)
 
 supp.mods<-aic.res[which(aic.res$rank=="supported"),]
 supp.mods<-supp.mods[-which(supp.mods$model=="nat"),]
+supp.mods<-supp.mods[-which(supp.mods$model=="pred"),]
+supp.mods<-rbind(supp.mods,sp_reprod)
 supp.mods<-tidy.df(supp.mods)
 supp.mods
-
-supp.mods<-merge(supp.mods, mt2, by="mod_name")
 
 # arrange for plotting:
-supp.mods<-supp.mods[c(7,6,5,3,4,2,1),]
+supp.mods<-supp.mods[c(2,9,1,3,4,7,8,5,6),]
 supp.mods<-tidy.df(supp.mods)
 supp.mods
 
-# Get estimates from model for plots:
+### GET ESTIMATES:
 
 preds.store.supp<-list()
 
@@ -1060,20 +1057,19 @@ for (i in 1:nrow(supp.mods)){
 
 resp.thisrun<-as.character(supp.mods$response[i])
 pred.thisrun<-as.character(supp.mods$predictor[i])
-scdat.thisrun<-get(as.character(supp.mods$sc_data[i]))
-head(scdat.thisrun,2); dim(scdat.thisrun)
+
 range.thisrun<-NULL
 
 mod.thisrun<-NULL
 
 type.thisrun<-as.character(supp.mods$model[i])
 
-if(type.thisrun=="add") mod.thisrun<-lm(get(resp.thisrun)~get(pred.thisrun)+native,data=scdat.thisrun)
-if(type.thisrun=="int") mod.thisrun<-lm(get(resp.thisrun)~get(pred.thisrun)*native,data=scdat.thisrun)
+if(type.thisrun=="add") mod.thisrun<-lm(get(resp.thisrun)~get(pred.thisrun)+native,data=gds_upd)
+if(type.thisrun=="int") mod.thisrun<-lm(get(resp.thisrun)~get(pred.thisrun)*native,data=gds_upd)
 
 summary(mod.thisrun)
 
-nd.thisrun<-data.frame(native=c(rep("native",50),rep("non_native",50)),pred=seq(min(scdat.thisrun[,pred.thisrun],na.rm=T),max(scdat.thisrun[,pred.thisrun],na.rm=T),length.out=50))
+nd.thisrun<-data.frame(native=c(rep("native",50),rep("non_native",50)),pred=seq(min(gds_upd[,pred.thisrun],na.rm=T),max(gds_upd[,pred.thisrun],na.rm=T),length.out=50))
 colnames(nd.thisrun)[2]<-pred.thisrun
 head(nd.thisrun)
 pr1<-predict(mod.thisrun,newdata=nd.thisrun,se.fit=T)
@@ -1091,7 +1087,7 @@ if(is.null(range.thisrun)==F){
 
 summary(mod.thisrun)
 
-nd2<-data.frame(native=c(rep("native",1),rep("non_native",1)),pred=mean(scdat.thisrun[,pred.thisrun],na.rm=T))
+nd2<-data.frame(native=c(rep("native",1),rep("non_native",1)),pred=mean(gds_upd[,pred.thisrun],na.rm=T))
 colnames(nd2)[2]<-pred.thisrun
 pr3<-predict(mod.thisrun,newdata=nd2,se.fit=T)
 pr4<-data.frame(nd2,fit=pr3$fit,se=pr3$se.fit)
@@ -1111,17 +1107,17 @@ save.image("../04_workspaces/STEP05_env_wksp")
 
 ### PLOT:
 
-supp.mods # models to plot (n=7)
+supp.mods # models to plot
 preds.store.supp 
 
 pd.supp<-supp.mods
-pd.supp$resp_lab<-c(rep("Population growth rate",1),rep("Neutral genetic diversity",4),rep("Adaptive genetic diversity",2))
-pd.supp$pred_lab<-c(rep("Mean temperature",1),rep("Density",1),rep("Temperature seasonality",1),rep("Mean precipitation (mm)",2),rep("Mean temperature",1),rep("Mean precipitation (mm)",1))
-pd.supp$space_after<-c(rep("no",1),"yes",rep("no",5))
-pd.supp$lett<-letters[1:7]
+pd.supp$resp_lab<-c(rep("log(reprod. effort/m2)",2),rep("Population growth rate",1),rep("Neutral genetic diversity",4),rep("Adaptive genetic diversity",2))
+pd.supp$pred_lab<-c(rep("Mean temperature",1),rep("Precipitation seasonality",1),rep("Mean temperature",1),rep("Temperature seasonality",1),rep("Mean precipitation (mm)",1),rep("Density",1),rep("log(reprod. effort/m2)",1),rep("Mean temperature",1),rep("Mean precipitation (mm)",1))
+pd.supp$space_after<-c(rep("no",2),"yes",rep("no",6))
+pd.supp$lett<-letters[1:9]
 
-quartz(title="",width=9.5,height=9.5, dpi=70, pointsize=21)
-par(mfrow=c(3,3),mgp=c(2.7,0.9,0),oma=c(0,0,0.5,1),mar=c(4.5,4,1.5,1.7))
+quartz(title="",width=12.5,height=9.5, dpi=70, pointsize=21)
+par(mfrow=c(3,4),mgp=c(2.7,0.9,0),oma=c(0,0,0.5,1),mar=c(4.5,4,1.5,1.7))
 
 for (i in 1:nrow(pd.supp)){
 
@@ -1130,20 +1126,38 @@ pred.thisrun<-as.character(pd.supp$predictor[i])
 est.thisrun<-preds.store.supp[[i]]
 head(est.thisrun)
 
-scdat.thisrun<-get(as.character(pd.supp$sc_data[i]))
-unscdat.thisrun<-get(as.character(pd.supp$unsc_data[i]))
-head(scdat.thisrun,2)
+# Scaled data:
+scdat.thisrun<-gds_upd
 
-raw.scaled<-scdat.thisrun[,c(which(colnames(scdat.thisrun) %in% c("site","native","mt","st","ap","sp","Y0_ros_m2")),which(colnames(scdat.thisrun)==resp.thisrun))]
-raw.unscaled<-unscdat.thisrun[,c(which(colnames(unscdat.thisrun) %in% c("site","native","mt","st","ap","sp","Y0_ros_m2")),which(colnames(unscdat.thisrun)==resp.thisrun))]
+# Unscaled data:
+if(gregexpr("_sc",pred.thisrun)[[1]][1]>0) unsc_x<-substr(pred.thisrun,1,nchar(pred.thisrun)-3) else unsc_x<-pred.thisrun
+
+unscdat.thisrun<-gds_upd[,c(resp.thisrun,pred.thisrun)]
+head(unscdat.thisrun,3)
+
+raw.scaled<-scdat.thisrun[,c(which(colnames(scdat.thisrun) %in% c("site_code","native", pred.thisrun)),which(colnames(scdat.thisrun)==resp.thisrun))]
+raw.unscaled<-scdat.thisrun[,c(which(colnames(scdat.thisrun) %in% c("site_code","native",unsc_x)),which(colnames(scdat.thisrun)==resp.thisrun))]
 head(raw.scaled); dim(raw.scaled)
 head(raw.unscaled); dim(raw.unscaled)
+
+head(est.thisrun,3); dim(est.thisrun)
+
+# For sp, only plot estimates within the range of the data:
+if(pred.thisrun=="sp_sc"){
+max.sp<-max(raw.scaled[which(raw.scaled$native=="native"),pred.thisrun])
+
+est.thisrun<-est.thisrun[-which(est.thisrun$predictor[est.thisrun$native=="native"]>max.sp),]
+est.thisrun<-tidy.df(est.thisrun)
+
+}
+
+if(length(grep("LOG_Y0_ros_m2",pred.thisrun))>0) raw.unscaled[,unsc_x]<-exp(raw.unscaled[,unsc_x])
 
 yl.now<-c(min(c(min(est.thisrun$lci),min(raw.scaled[,resp.thisrun],na.rm=T))),max(c(max(est.thisrun$uci),max(raw.scaled[,resp.thisrun],na.rm=T))))
 
 head(est.thisrun)
 
-plot(est.thisrun[est.thisrun$native=="native",which(colnames(est.thisrun)=="predictor")],est.thisrun$fit[est.thisrun$native=="native"],ylim=yl.now,type="n",bty="l",xlab="",ylab=pd.supp$resp_lab[i],xaxt="n", las=1,cex.axis=0.8)
+plot(est.thisrun[est.thisrun$native=="native",which(colnames(est.thisrun)=="predictor")],est.thisrun$fit[est.thisrun$native=="native"],ylim=yl.now,xlim=c(min(est.thisrun$predictor),max(est.thisrun$predictor)),type="n",bty="l",xlab="",ylab=pd.supp$resp_lab[i],xaxt="n", las=1,cex.axis=0.8)
 
 pg.ci("predictor","est.thisrun",x.subset="native",colour=rgb(0,0,0,0.1))
 lines(est.thisrun[est.thisrun$native=="native",which(colnames(est.thisrun)=="predictor")],est.thisrun$fit[est.thisrun$native=="native"],lty=1)
@@ -1153,29 +1167,44 @@ head(raw.scaled)
 points(raw.scaled[raw.scaled$native=="native",pred.thisrun],raw.scaled[raw.scaled$native=="native",resp.thisrun],col="black",cex=0.5, pch=20)
 points(raw.scaled[raw.scaled$native=="non_native",pred.thisrun],raw.scaled[raw.scaled$native=="non_native",resp.thisrun],col="red",cex=0.5, pch=20)
 
-# if(resp.thisrun=="emp_pgr_ros") arrows(-10,0,2.5,0,length=0,lwd=0.3,col="black")
-
 xax<-seq(round(min(raw.scaled[,pred.thisrun]),0),round(max(raw.scaled[,pred.thisrun]),0),length.out=5)
 head(raw.unscaled)
-xaxl<-round(seq(round(min(raw.unscaled[,pred.thisrun]),0),round(max(raw.unscaled[,pred.thisrun]),0),length.out=5),0)
+xaxl<-round(seq(round(min(raw.unscaled[,unsc_x]),0),round(max(raw.unscaled[,unsc_x]),0),length.out=5),0)
 
-axis(side=1, at=xax, labels=xaxl, cex.axis=0.72)
+if(unsc_x=="ap") xaxl<-round(xaxl,-2)
+if(unsc_x=="LOG_Y0_ros_m2") xaxl<-round(xaxl,-1)
+if(unsc_x=="sp") xaxl<-round(xaxl,-1)
+if(unsc_x=="Y0_ros_m2") xaxl<-round(xaxl,-1)
+
+if(unsc_x=="mt") 
+{
+new.axis<-seq(0,round(max(raw.unscaled[,unsc_x]),0),length.out=5)
+
+ru_dat<-c(raw.unscaled[,unsc_x])
+new.pos<-predict.lm(lm(raw.scaled[,pred.thisrun]~ ru_dat),newdata=data.frame(ru_dat=new.axis))
+
+axis(side=1, at=new.pos, labels=new.axis, cex.axis=0.75)
+
+} # close new axis
+
+if(unsc_x!="mt") axis(side=1, at=xax, labels=xaxl, cex.axis=0.75)
 
 xlab.thirun<-as.character(pd.supp$pred_lab[i])
-if(length(grep("emperatu",xlab.thirun))==0) title(xlab= xlab.thirun,mgp=c(2.2,1,0)) else title(xlab=bquote(.(xlab.thirun)*" ("*degree*"C)"),mgp=c(2.2,1,0))
+if(length(grep("emperatu",xlab.thirun))==0) title(xlab=xlab.thirun,mgp=c(2.2,1,0)) else title(xlab=bquote(.(xlab.thirun)*" ("*degree*"C)"),mgp=c(2.2,1,0))
 
-mtext(paste("(",pd.supp$lett[i],")",sep=""),side=2,las=1,line=1.6,adj=0,cex=0.7,at=par("usr")[4]+((par("usr")[4]-par("usr")[3])/7))
+if(pd.supp$model[i]=="int") mtext(paste("(",pd.supp$lett[i],")    ","interaction",sep=""),side=2,las=1,line=1.6,adj=0,cex=0.6,at=par("usr")[4]+((par("usr")[4]-par("usr")[3])/7)) else mtext(paste("(",pd.supp$lett[i],")    ","no interaction",sep=""),side=2,las=1,line=1.6,adj=0,cex=0.6,at=par("usr")[4]+((par("usr")[4]-par("usr")[3])/7))
 
 # Add general legend:
+if(i==3) {
 par(xpd=NA)
-if(i==2) legend(par("usr")[2]+((par("usr")[2]/100)*0),par("usr")[4]+((par("usr")[4]/10)*0.05),legend=c("native","non native"),lty=c(1,2),bty="n",col=c("black","red"))
-if(i==2) legend(par("usr")[2]+((par("usr")[2]/100)*20),par("usr")[4]+((par("usr")[4]/10)*0.05),legend=c("",""),pch=c(20),col=c("black","red"),bty="n")
-par(xpd=F)
+blankplot()
 
-if(pd.supp$space_after[i]=="yes") blankplot()
+legend(0,10,legend=c("native","non native"),lty=c(1,2),bty="n",col=c("black","red"))
+legend(1,10,legend=c("",""),pch=c(20),col=c("black","red"),bty="n")
+par(xpd=F)
+} # close if i==1
 
 } # close plots i
-
 
 # -------------------- #
 # CORRELATION plots:
@@ -1183,7 +1212,7 @@ if(pd.supp$space_after[i]=="yes") blankplot()
 
 # mt, st, ap
 
-env.testdf<-env_unsc[,c("mt","st","ap")]
+env.testdf<-gds_upd[,c("mt","st","ap")]
 head(env.testdf)
 
 env.cortest<-cor(env.testdf,use="na.or.complete")
@@ -1199,27 +1228,26 @@ for (i in 1:length(env.testdf)){
 v1<-env.cornames[1,i]
 v2<-env.cornames[2,i]
 
-col1<-which(colnames(env_unsc)==v1)
-col2<-which(colnames(env_unsc)==v2)
+col1<-which(colnames(gds_upd)==v1)
+col2<-which(colnames(gds_upd)==v2)
 
 v1<-as.character(axis.names$newnames[which(axis.names$cornames==v1)])
 v2<-as.character(axis.names$newnames[which(axis.names$cornames==v2)])
 
-plot(env_unsc[env_unsc$native=="native",col1], env_unsc[env_unsc$native=="native", col2],type="p",bty="o",xlab="",ylab="", las=1,cex.axis=0.9, col="black",cex=0.5, pch=20,xlim=c(min(env_unsc[,col1]),max(env_unsc[,col1])), ylim=c(min(env_unsc[, col2]),max(env_unsc[, col2])))
-points(env_unsc[env_unsc$native=="non_native",col1], env_unsc[env_unsc$native=="non_native",col2],col="red",pch=20, cex=0.5)
+plot(gds_upd[gds_upd$native=="native",col1], gds_upd[gds_upd$native=="native", col2],type="p",bty="o",xlab="",ylab="", las=1,cex.axis=0.9, col="black",cex=0.5, pch=20,xlim=c(min(gds_upd[,col1]),max(gds_upd[,col1])), ylim=c(min(gds_upd[, col2]),max(gds_upd[, col2])))
+points(gds_upd[gds_upd$native=="non_native",col1], gds_upd[gds_upd$native=="non_native",col2],col="red",pch=20, cex=0.5)
 
 if(length(grep("emperatu",v1))==0) title(xlab=v1,mgp=c(2.2,1,0)) else title(xlab=bquote(.(v1)*" ("*degree*"C)"),mgp=c(2.2,1,0))
 if(length(grep("emperatu",v2))==0) title(ylab=v2,mgp=c(2.8,1,0)) else title(ylab=bquote(.(v2)*" ("*degree*"C)"),mgp=c(2.2,1,0))
 
 mtext(paste("(",letters[i],")",sep=""),side=2,las=1,line=1.6,adj=0,cex=0.9,at=par("usr")[4]+((par("usr")[4]-par("usr")[3])/10))
 
-st_mt<-cor.test(env_unsc[,col1], env_unsc[,col2])
+st_mt<-cor.test(gds_upd[,col1], gds_upd[,col2])
 text(par("usr")[2]-((par("usr")[2]/100)*4),(par("usr")[4]/6)*5.5,bquote(italic("r")*" = "*.(round(st_mt$estimate,2))),cex=0.7,adj=1)
 text(par("usr")[2]-((par("usr")[2]/100)*4),(par("usr")[4]/6)*5,bquote(italic("p")*" = "*.(round(st_mt$p.value,2))),cex=0.7,adj=1)
 
 # Add general legend:
 par(xpd=NA)
-# if(i==1) legend(par("usr")[2]+((par("usr")[2]/100)*0),par("usr")[4]+((par("usr")[4]/10)*0.05),legend=c("native","non native"),lty=c(1,2),bty="n",col=c("black","red"))
 if(i==1) legend(par("usr")[2]+((par("usr")[2]/100)*20),par("usr")[4]+((par("usr")[4]/10)*0.05),legend=c("native","non native"),pch=c(20),col=c("black","red"),bty="n")
 par(xpd=F)
 

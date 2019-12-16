@@ -5,6 +5,25 @@
 
 # author: Annabel Smith
 
+# Simple genotype converter, generalised from convert genepop and structure functions:
+
+convert_geno<-function(data, het_ds, snp_ds, ref_ds, het_new, snp_new, ref_new, na_input){ 
+
+# data = a data frame with snp data only, no site or individual columns
+# het_ds, snp_ds, ref_ds = in quotes, the DartSeq codes for genotypes
+# het_new, snp_new, ref_new = in quotes, what you want the new codes to be
+# na_input = if NA, input as NA (no quotes), if something else (e.g. "-9 -9") then use quotes 
+
+apply(
+data,2,function(x)
+ifelse(is.na(x),na_input,
+ifelse(x==het_ds,het_new,
+ifelse(x==snp_ds,snp_new,
+ifelse(x==ref_ds,ref_new,x
+))))
+)
+}
+
 # Drop levels and re-assign rownames to subsetted data frames:
 tidy.df<-function(df){
 df<-droplevels(df)
@@ -124,7 +143,7 @@ mtext(bquote(bold("r = "~.(as.character(round(r.thisrun,3))))),adj=0, col="red",
 
 } # close plot.pw function
 
-# Analyse multicollinearity among many terms in a data frame. This has been simplified from mcl_v2 in the CATFORD script to make it more general:
+# Analyse multicollinearity among many terms in a data frame. This has been simplified from mcl_v2 in CATFORD_E93 to make it more general:
 mcl_v3<-function(datasets){
 # datasets: vector containing the datasets to be analysed, IN QUOTES
 

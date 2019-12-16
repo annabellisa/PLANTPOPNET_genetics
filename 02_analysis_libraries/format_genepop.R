@@ -1,7 +1,7 @@
 
 # Author: Annabel Smith
 
-# Warning: format_genepop is very SLOW (up to 1.5 hr for 70,000 markers and 450 individuals)
+# Warning: format_genepop can be very SLOW for large data sets (up to 1.5 hr for 70,000 markers and 450 individuals). But it's not so bad for 20,000 markers. 
 
 format_genepop<-function(data,headline){
 
@@ -30,7 +30,6 @@ ghead(gp_cons1)
 ## ~~~~ ****** Genepop file ****** ~~~~ ##
 
 # *** WARNING: SLOW
-# Hours for full data set
 # populations must be in the first column called "site" in data.toconvert
 # individuals must be in the second column called "ind" in data.toconvert
 

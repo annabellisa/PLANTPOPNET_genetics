@@ -6,29 +6,24 @@
 ### Diversity & distances
 ### Author: Annabel Smith
 
-# UPDATE 22 March 2019: all updated after bioclim update
-
-# Load and tidy workspace and remove everything except necessary objects:
-load("../04_workspaces/STEP01_proc_wksp"); rm(list=setdiff(ls(), c("linf","sdat")))
-
-# Load working workspace:
+# Load workspace:
 load("../04_workspaces/STEP04_divdist_wksp")
 
 # load functions:
-invisible(lapply(paste("/Users/annabelsmith/Documents/01_Current/PROJECTS/01_PLANTPOPNET/DATA_and_ANALYSIS/SNP_analysis/GENOTYPE_processing/ANALYSE_GENOME/02_analysis_libraries/",dir("../02_analysis_libraries"),sep=""),function(x) source(x)))
+invisible(lapply(paste("../02_analysis_libraries/",dir("../02_analysis_libraries"),sep=""),function(x) source(x)))
 
 # Load libraries:
-library("adegenet")
 library("diveRsity")
 library("geosphere")
 library("hierfstat")
+library("adegenet")
 
 #########################################
 ##     GENIND object & site data:      ##
 #########################################
 {
 
-gp_dir<-"/Users/annabelsmith/Documents/01_Current/PROJECTS/01_PLANTPOPNET/DATA_and_ANALYSIS/SNP_analysis/GENOTYPE_processing/ANALYSIS_RESULTS/Genepop_DATA_FILES"
+gp_dir<-"../ANALYSIS_RESULTS/Genepop_DATA_FILES"
 dir(gp_dir)
 
 # Make genind objects:
@@ -54,7 +49,7 @@ save.image("../04_workspaces/STEP04_divdist_wksp")
 genind_filt1 # no OG or cultivars
 genind_filt2 # all sites
 genind_filt3 # non-neutral loci, no OG or cultivars, no small sample sizes
-head(sdat,3)
+head(sdat,3); dim(sdat)
 
 #########################################
 ##     Genetic & enviro distances:     ##
@@ -63,7 +58,7 @@ head(sdat,3)
 
 ### -- *** CALCULATE FST:
 
-gp_dir<-"/Users/annabelsmith/Documents/01_Current/PROJECTS/01_PLANTPOPNET/DATA_and_ANALYSIS/SNP_analysis/GENOTYPE_processing/ANALYSIS_RESULTS/Genepop_DATA_FILES"
+gp_dir<-"../ANALYSIS_RESULTS/Genepop_DATA_FILES"
 dir(gp_dir)
 
 # USE ALL POPULATIONS, including outgroups and cultivars (genepop_filt2.gen); can subset this later, but we need all the FSTs:
@@ -168,9 +163,6 @@ check.rows(m2)
 #########################################
 {
 
-# Use hierfstat functions. divBasic from diveRsity does not work on laptop or big mac with full data set (after hours of running the program quits and says "your computer has run out of application memory"), although it works on test data sets. 
-# het<-divBasic("Genepop_files/Development/irl_test")
-
 ## -- ** POPULATION LEVEL GENETIC DIVERSITY:
 
 # Remember to update VIR to VA
@@ -242,47 +234,125 @@ plot(test_df$ar_default_rd, test_df$ar_adapt)
 
 save.image("../04_workspaces/STEP04_divdist_wksp")
 
-## -- ** INDIVIDUAL HETEROZYGOSITY:
+## -- ** Admixture Diversity Score:
 
-# Calculate individual heterozygosity
-# Use dartseq format files, stored in the Genepop folder:
-dir(gp_dir)
+### ---- level of admixture per population
 
-ds_filt2<-read.table(paste(gp_dir,"dartseq_filt2.txt",sep="/"),header=T)
-ghead(ds_filt2); dim(ds_filt2)
+# Working from equations in Harismendy et al. 2019, Journal of the American Medical Informatics Association, 26(5), 457–46
 
-# Codes for onerow formatted data:
-# 0 = Reference allele homozygote
-# 1 = SNP allele homozygote
-# 2 = heterozygote
+# Structure summary objects loaded from: Supplement_03_plot_structure.R
 
-# 3 MINS on laptop
+# 491 individuals including cultivars and outgroups
+head(all_dat); dim(all_dat)
+head(site_assig); dim(all_dat)
 
-ih_out<-data.frame(ds_filt2[,1:2],ind_het=NA)
-head(ih_out,25)
+# Associated site data (61 pops including cultivars and outgroups):
+head(sdat,2); dim(sdat)
+head(sdat2); dim(sdat)
 
-for(i in 1:nrow(ih_out)){
+# The same data but with outgroups and cultivars removed (53 pops, 454 individuals):
+head(sdpie,2); dim(sdpie)
+head(cluster.data); dim(cluster.data)
 
-ind.cons<-as.character(ds_filt2[i,3:length(ds_filt2)])
-t.cons<-data.frame(ind.cons=as.numeric(names(table(ind.cons))),count=as.numeric(table(ind.cons)),stringsAsFactors=F)
+# Aggregated data to give the assignment proportion for each population (53 pops):
+head(r1); dim(r1)
+head(agg_dat); dim(agg_dat)
 
-if(length(which(is.na(t.cons$ind.cons)))>0) t.cons<-t.cons[-which(is.na(t.cons$ind.cons)),] else stop("no zero category")
+# Use individual level data for the analysis (6 clusters with assignment probabilities for 454 individuals):
+ind6<-cluster.data[,grep("assig",colnames(cluster.data))]
+head(ind6); dim(ind6)
 
-if(length(which(t.cons$ind.cons==2))==0) ih_out[i,3]<-"no_heterozygotes" else ih_out[i,3]<-t.cons$count[t.cons$ind.cons==2]/sum(t.cons$count)
+# The Diversity Score from Harismendy et al. We don't need eqn 1 (the cumulative admixture fraction), because ours already sum to 1. 
 
-} # close for i
-save.image("../04_workspaces/STEP04_divdist_wksp")
-head(ih_out)
+# The diversity score is the same as the shannon diversity index but with a scaling factor to account for the number of clusters (Hmax). That is, it makes the diversity score relative to complete evenness. 
 
-# write.table(ih_out,"ih.txt",quote=F,row.names=F,sep="\t")
+DS<-function(x,K) {
+	Hmax<-K*((1/K)*log(1/K))
+	(-sum(x*log(x)))/-Hmax
+	}
+
+# SET K:
+K<-6
+
+# Calculate admixture diversity for all individuals:
+ds_div<-apply(ind6, 1, DS, K=6)
+range(ds_div)
+
+ind6_dv<-data.frame(indiv=cluster.data$indiv, admix_div=ds_div)
+ind_site<-cluster.data[,c("site_code","indiv","native","region","country","latitude","longitude")]
+ind6_dv<-merge(ind6_dv, ind_site, by="indiv", all.x=T, all.y=F)
+head(ind6_dv); dim(ind6_dv)
+
+# Summarise site-level admixture diversity:
+addiv_site<-aggregate(admix_div~site_code,FUN=mean,data=ind6_dv)
+ex_dat<-ind6_dv[,c("site_code","native","region","country","latitude","longitude")]
+ex_dat<-ex_dat[-which(duplicated(ex_dat$site_code)),]
+ex_dat<-tidy.df(ex_dat)
+head(ex_dat); dim(ex_dat)
+addiv_site<-merge(addiv_site, ex_dat, by="site_code", all.x=T, all.y=F)
+head(addiv_site); dim(addiv_site)
+
+# Allelic richness:
+ar_dat<-read.table(paste("../01_data/gen_div.txt",sep=""),header=T)
+
+# Check all are true:
+addiv_site$site_code %in% ar_dat$site
+
+# Add admixture diversity
+ar_dat<-merge(ar_dat, addiv_site, by.x="site", by.y="site_code", all.x=T, all.y=F)
+head(ar_dat); dim(ar_dat)
+
+# write.table(ar_dat, file="ardat.txt", quote=F, row.names=F, sep="\t")
+
+# Is there a difference in admixture between the native and non-native ranges?
+library(lmerTest)
+library(lme4)
+library(AICcmodavg)
+
+head(ind6_dv); dim(ind6_dv)
+
+dv_ind<-lmer(admix_div~native+(1|site_code), data=ind6_dv)
+summary(dv_ind)
+admix_df<-predictSE(dv_ind, newdata=data.frame(native=c("native","non_native")), se.fit=T)
+admix_pred<-data.frame(native=c("native","non_native"),fit=admix_df$fit, se=admix_df$se.fit)
+admix_pred$lci<-admix_pred$fit-(1.96*admix_pred$se)
+admix_pred$uci<-admix_pred$fit+(1.96*admix_pred$se)
+
+### PLOT for SI:
+{
+
+quartz("",4,4)
+par(mfrow=c(2,2),mar=c(4,4,1,1), mgp=c(2.5,0.8,0))
+
+plot(1:2,admix_pred$fit, xlim=c(0.5,2.5), ylim=c(min(admix_pred$lci),max(admix_pred$uci)), pch=20, xaxt="n", xlab="", ylab="admixture diversity", las=1,cex.axis=0.85,cex.lab=0.85)
+arrows(1:2, admix_pred$lci, 1:2, admix_pred$uci, length=0.02, code=3, angle=90)
+axis(side=1, at=c(1,2), labels=c("native","non-native"), cex.axis=0.85)
+mtext(bquote("range "~italic("p = ")~.(round(summary(dv_ind)$coefficients[2,5],3))), side=3, line=0,cex=0.7, adj=0)
+mtext("(a)",side=3, line=0, adj=0, at=-0.6, cex=0.8)
+
+blankplot()
+
+plot(ar_dat$ar[ar_dat$native=="native"], ar_dat$admix_div[ar_dat$native=="native"], pch=20, col="black", cex.axis=0.8, las=1,ylab="admixture diversity",xlab="", cex.lab=0.85)
+points(ar_dat$ar[ar_dat$native=="non_native"], ar_dat$admix_div[ar_dat$native=="non_native"], pch=20, col="red", cex.axis=0.8, las=1,cex.lab=0.8)
+title(xlab="allelic richness (neutral)", cex.lab=0.85, mgp=c(2,1,0))
+mtext("(b)",side=3, line=0, adj=0, at=1.119, cex=0.8)
+
+# Is there are r.ship between ar and admixture diversity?
+ar_admix<-lm(admix_div~ar*native,data=ar_dat)
+mtext(bquote("range x ar"~italic("p = ")~.(round(summary(ar_admix)$coefficients[4,4],3))), side=3, line=0,cex=0.7, adj=0)
+
+plot(ar_dat$ar_adapt[ar_dat$native=="native"], ar_dat$admix_div[ar_dat$native=="native"], pch=20, col="black", cex.axis=0.8, las=1,ylab="admixture diversity",xlab="", cex.lab=0.8)
+points(ar_dat$ar_adapt[ar_dat$native=="non_native"], ar_dat$admix_div[ar_dat$native=="non_native"], pch=20, col="red", cex.axis=0.8, las=1,cex.lab=0.8)
+title(xlab="allelic richness (adaptive)", cex.lab=0.85, mgp=c(2,1,0))
+mtext("(c)",side=3, line=0, adj=0, at=1.121, cex=0.8)
+
+# Is there are r.ship between ar_adapt and admixture diversity?
+adapt_admix<-lm(admix_div~ar_adapt*native,data=ar_dat)
+mtext(bquote("range x ar"~italic("p = ")~.(round(summary(adapt_admix)$coefficients[4,4],3))), side=3, line=0,cex=0.7, adj=0)
+
+} # close plot
 
 } # close genetic diversity
-
-
-
-
-
-
 
 
 

@@ -1,13 +1,13 @@
 
 # ------------------------------------ #
-# ----------- SUPPLEMENT 05  --------- #
+# ----------- SUPPLEMENT 04  --------- #
 # ------------------------------------ #
 
 ### process demography
 ### Author: Annabel Smith
 
 # load functions:
-invisible(lapply(paste("/Users/annabelsmith/Documents/01_Current/PROJECTS/01_PLANTPOPNET/DATA_and_ANALYSIS/SNP_analysis/GENOTYPE_processing/ANALYSE_GENOME/02_analysis_libraries/",dir("../02_analysis_libraries"),sep=""),function(x) source(x)))
+invisible(lapply(paste("../02_analysis_libraries/",dir("../02_analysis_libraries"),sep=""),function(x) source(x)))
 
 #########################################
 ####  	     	  DATA: 	   		 ####

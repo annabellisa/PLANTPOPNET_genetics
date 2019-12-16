@@ -1,6 +1,7 @@
 
 # Author: Annabel Smith, unless other source indicated
 
+# filter monomorphic loci:
 mono_loci<-function(data,first_col){
 
 # data = a dataframe of dart SNPs, cleaned and formatted in STEP_01
@@ -105,6 +106,7 @@ return(list(p=p,q=q,n0=n0,n1=n1,n2=n2,n=n))
 
 } # close allele_freq
 
+# minor allele frequency:
 maf_summary<-function(data){
 
 # data = a dataframe of dart SNPs, cleaned and formatted in STEP_01
@@ -120,6 +122,7 @@ return(maf)
 
 } # close maf_summary
 
+# filter loci below a minor allele frequency cut-off:
 maf_filter<-function(maf_sum,data,min_maf){
 
 # maf_sum = the summary data frame created with maf_summary
@@ -138,6 +141,7 @@ return(filt_maf)
 
 } # close maf_filter
 
+# Hardy-Weinberg Equilibrium test:
 hwe_exact<-function(data){
 
 # data = a dataframe of dart SNPs, cleaned and formatted in STEP_01

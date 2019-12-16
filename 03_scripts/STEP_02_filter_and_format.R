@@ -10,7 +10,7 @@
 load("../04_workspaces/STEP01_proc_wksp"); rm(list=setdiff(ls(), c("snp_onerow","linf","sdat")))
 
 # load functions:
-invisible(lapply(paste("/Users/annabelsmith/Documents/01_Current/PROJECTS/01_PLANTPOPNET/DATA_and_ANALYSIS/SNP_analysis/GENOTYPE_processing/ANALYSE_GENOME/02_analysis_libraries/",dir("../02_analysis_libraries"),sep=""),function(x) source(x)))
+invisible(lapply(paste("../02_analysis_libraries/",dir("../02_analysis_libraries"),sep=""),function(x) source(x)))
 
 #########################################
 ####	     FULL DATA SET:    		 ####
@@ -96,7 +96,7 @@ ghead(filtered_data); dim(filtered_data)
 
 # Filter loci with were in LD in > 5 populations with a correlation of 0.75 (see Supplement_03_LD_tests.R for details):
 
-LD_dir<-"/Users/annabelsmith/Documents/01_Current/PROJECTS/01_PLANTPOPNET/DATA_and_ANALYSIS/SNP_analysis/GENOTYPE_processing/ANALYSIS_RESULTS/LINKAGE_DISEQUILIBRIUM/LD_parameters"
+LD_dir<-"../../ANALYSIS_RESULTS/LINKAGE_DISEQUILIBRIUM/LD_parameters"
 dir(LD_dir)
 
 ld_loc<-read.table(paste(LD_dir, "LD_r75_over5pop_LOCI_FOR_REMOVAL.txt",sep="/"),header=T)
@@ -114,7 +114,7 @@ ghead(filtered_data)
 
 # --- *** HWE filters *** --- #
 
-hwe_dir<-"/Users/annabelsmith/Documents/01_Current/PROJECTS/01_PLANTPOPNET/DATA_and_ANALYSIS/SNP_analysis/GENOTYPE_processing/ANALYSIS_RESULTS/HWE/ALL_pops_HWE_test"
+hwe_dir<-"../../ANALYSIS_RESULTS/ALL_pops_HWE_test"
 dir(hwe_dir)
 
 hwe_res<-read.table(paste(hwe_dir,"hwe_all_pops.txt",sep="/"),header=T)
@@ -139,7 +139,7 @@ ghead(filtered_data); dim(filtered_data)
 ghead(filtered_data); dim(filtered_data)
 
 # Directory with results:
-sel_dir<-"/Users/annabelsmith/Documents/01_Current/PROJECTS/01_PLANTPOPNET/DATA_and_ANALYSIS/SNP_analysis/GENOTYPE_processing/ANALYSIS_RESULTS/LOCI_UNDER_SELECTION"
+sel_dir<-"../../ANALYSIS_RESULTS/LOCI_UNDER_SELECTION"
 dir(sel_dir)
 
 # Outlier loci:
@@ -182,12 +182,8 @@ ghead(filtered_data); dim(filtered_data)
 
 data<-filtered_data
 
-# Take 2500 random loci for FST:
-# loc.gp<-sample(colnames(data)[3:ncol(data)],2500)
-# data<-data[,c(1,2,which(colnames(data) %in% loc.gp))]
-
 # List parameters:
-headline<-"genepop_filt3"
+headline<-"enter_data_name_here"
 param.sites<-levels(data$site)
 param.nosites<-length(param.sites)
 param.noloci<-ncol(data)-2
@@ -198,7 +194,7 @@ param.callrate<-T
 param.MAF<-T
 param.LD<-T
 param.HWE<-T
-param.neu<-F
+param.neu<-T
 param.dup<-T
 
 ghead(data); dim(data)

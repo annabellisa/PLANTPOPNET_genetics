@@ -9,18 +9,14 @@
 
 # Takes 52 mins on Big Mac with 300 reps
 
-# Load functions (BIG MAC):
-invisible(lapply(paste("/Volumes/LaCie/Annabel_GBS/sims_Feb_2019/sims_19Feb2019/02_analysis_libraries/",dir("../02_analysis_libraries"),sep=""),function(x) source(x)))
-
-# Load functions (laptop):
-invisible(lapply(paste("/Users/annabelsmith/Documents/01_Current/PROJECTS/01_PLANTPOPNET/DATA_and_ANALYSIS/SNP_analysis/GENOTYPE_processing/ANALYSE_GENOME/02_analysis_libraries/",dir("../02_analysis_libraries"),sep=""),function(x) source(x)))
+# load functions:
+invisible(lapply(paste("../02_analysis_libraries/",dir("../02_analysis_libraries"),sep=""),function(x) source(x)))
 
 # Load workspace:
 load("../04_workspaces/STEP00_sims.RData")
 
 # Load packages:
 library(MetaPopGen)
-# install.packages("MetaPopGen.0.0.4.tar.gz",type="source",repos=NULL)
 
 image.name<-paste("sims_",Sys.Date(),".RData", sep="")
 save.image(image.name)
@@ -412,7 +408,7 @@ par(mfrow=c(2,2),mar=c(4,5,2,1),mgp=c(3.5,1,0))
 
 # EXPERIMENT 1: PLOT ----
 
-plot(ff$fem.fecund[ff$deme=="d1"],ff$He[ff$deme=="d1"],type="l",ylim=c(min(ff$He.lci,na.rm=T),max(ff$He.uci,na.rm=T)),bty="l",las=1,xlab="",ylab="Heterozygosity",lwd=2)
+plot(ff$fem.fecund[ff$deme=="d1"],ff$He[ff$deme=="d1"],type="l",ylim=c(min(ff$He.lci,na.rm=T),max(ff$He.uci,na.rm=T)),bty="l",las=1,xlab="",ylab="Heterozygosity",lwd=2, main="no dispersal", font.main=1, cex.main=0.98)
 title(xlab="Female fecundity (seeds / plant)",mgp=c(2.2,1,0))
 xx<-ff$fem.fecund[ff$deme=="d1"]
 lci<-ff$He.lci[ff$deme=="d1"]
@@ -444,7 +440,7 @@ legend(20,0.4914,legend=c("juvenile survival:"),lty=c(1),col=rgb(0,0,0,0),bty="n
 legend(41,0.49,legend=c("low","high"),col=c("black","blue"),lty=c(1,2),bty="n",lwd=2, cex=0.9)
 legend(54.2,0.4874,legend=c("extinct"),col=c("black"),pch="†",bty="n", cex=0.9)
 
-plot(ff$fem.fecund[ff$deme=="d1"],ff$N[ff$deme=="d1"],type="l",ylim=c(min(ff$N.lci,na.rm=T),max(ff$N.uci,na.rm=T)),bty="l",las=1,xlab="",ylab="",yaxt="n",lwd=2)
+plot(ff$fem.fecund[ff$deme=="d1"],ff$N[ff$deme=="d1"],type="l",ylim=c(min(ff$N.lci,na.rm=T),max(ff$N.uci,na.rm=T)),bty="l",las=1,xlab="",ylab="",yaxt="n",lwd=2, main="no dispersal", font.main=1, cex.main=0.98)
 axis(side=2,at=axTicks(2),labels=axTicks(2)/1000,las=1)
 title(ylab="Population size (,000)",mgp=c(2.5,1,0))
 title(xlab="Female fecundity (seeds / plant)",mgp=c(2.2,1,0))
@@ -475,7 +471,7 @@ legend(41,18500,legend=c("low","high"),col=c("black","blue"),lty=c(1,2),bty="n",
 xl<-round(mr$no_mig[mr$deme=="d1"],0)
 xl<-c(xl[1:5],round(xl[6:8],-1),round(xl[9:13],-3))
 
-plot(log(mr$no_mig[mr$deme=="d1"]),mr$He[mr$deme=="d1"],type="l",ylim=c(0.496,max(mr$He.uci,na.rm=T)),bty="l",las=1,xlab="",ylab="Heterozygosity",yaxt="n",xaxt="n",lwd=2)
+plot(log(mr$no_mig[mr$deme=="d1"]),mr$He[mr$deme=="d1"],type="l",ylim=c(0.496,max(mr$He.uci,na.rm=T)),bty="l",las=1,xlab="",ylab="Heterozygosity",yaxt="n",xaxt="n",lwd=2, main="varying dispersal", font.main=1, cex.main=0.98)
 axis(side=1,at=log(mr$no_mig[mr$deme=="d1"]),labels=xl)
 axis(side=2, at=c(0.496,0.497,0.498,0.499),las=1)
 title(xlab="Migrants / generation (log scale)",mgp=c(2.2,1,0))
@@ -501,7 +497,7 @@ legend(2.7,0.49709,legend=c("juvenile survival:"),lty=c(1),col=rgb(0,0,0,0),bty=
 legend(5,0.4968,legend=c("low","high"),col=c("black","blue"),lty=c(1,2),bty="n",lwd=2, cex=0.9)
 par(xpd=F)
 
-plot(log(mig.diff$no_mig),mig.diff$He_diff,pch=20,ylim=c(min(mig.diff$diff.lci,na.rm=T),max(mig.diff$diff.uci,na.rm=T)),bty="l",las=1,xlab="",ylab="",xaxt="n")
+plot(log(mig.diff$no_mig),mig.diff$He_diff,pch=20,ylim=c(min(mig.diff$diff.lci,na.rm=T),max(mig.diff$diff.uci,na.rm=T)),bty="l",las=1,xlab="",ylab="",xaxt="n", main="varying dispersal", font.main=1, cex.main=0.98)
 axis(side=1,at=log(mig.diff$no_mig),labels=xl)
 title(ylab="Difference in heterozygosity",mgp=c(4,1,0))
 title(xlab="Migrants / generation (log scale)",mgp=c(2.2,1,0))
