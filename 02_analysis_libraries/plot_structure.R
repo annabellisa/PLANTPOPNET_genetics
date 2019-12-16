@@ -1,57 +1,6 @@
 
 # Author: Annabel Smith
 
-# V8 was used in the paper. V9 was an unsuccessful attempt at making the function more general - a worthy goal for the future. 
-
-str_plot_V9<-function(K,cluster.data,site.data,las.opt,yaxs.loc,col.pal,site.lab,add.ccode=NULL,...){
-
-# make assignment data matrix:
-dat.thisrun<-apply(cluster.data[grep("assig",colnames(cluster.data))],1,rbind)
-head(dat.thisrun)
-
-# make site data:
-sdat.thisrun<-cluster.data[,c("site_code",colnames(cluster.data)[which(colnames(cluster.data)=="native"):length(cluster.data)])]
-head(sdat.thisrun)
-
-# Set colour scheme:
-if(col.pal %in% rownames(brewer.pal.info)) cols.thisrun<-brewer.pal(K,col.pal) else cols.thisrun<-get(col.pal)[1:K]
-
-# Plot:
-par(mar=c(5,5,1,0),mgp=c(1,yaxs.loc+1,yaxs.loc),xpd=F)
-p1<-barplot(dat.thisrun,cex.axis=1.5,col=cols.thisrun,space=0,border=cols.thisrun,xaxt="n",las=las.opt,ylab="Probability \nof assignment",cex.lab=1.5)
-
-# Add lines for individuals and sites:
-arrows(which(!duplicated(sdat.thisrun$site_code))-1,-0.08,which(!duplicated(sdat.thisrun$site_code))-1,0.995,code=0,lwd=0.8)
-arrows(nrow(sdat.thisrun),-0.08,nrow(sdat.thisrun),0.995,code=0,lwd=0.8)
-arrows(1:nrow(sdat.thisrun),0,1:nrow(sdat.thisrun),0.995,code=0,lwd=0.05)
-
-# Draw a box:
-arrows(0,1,nrow(sdat.thisrun),1,code=0,lwd=0.8)
-arrows(0,0,nrow(sdat.thisrun),0,code=0,lwd=0.8)
-
-# Add labels for main sites
-if(site.lab=="site_code") axis(1,which(!duplicated(sdat.thisrun$site_code[sdat.thisrun$native!="outgroup"]))+3,labels=toupper(sdat.thisrun$site_code[which(!duplicated(sdat.thisrun$site_code[sdat.thisrun$native!="outgroup"]))]),tick=F,line=2.5,las=las.opt)
-
-# add lines for regions
-par(xpd=NA)
-
-head(sdat.thisrun)
-axis(1,which(sdat.thisrun$site_code=="TK")[round(length(which(sdat.thisrun$site_code=="TK"))/2,0)],labels="Asia",tick=F,line=5,las=2,cex.axis=1.5)
-
-arrows(head(which(sdat.thisrun$region=="Nth_America"),1),-0.35,tail(which(sdat.thisrun$region=="Nth_America"),1),-0.35,lwd=1.5,code=0)
-mtext("North America",at=which(sdat.thisrun$region=="Nth_America")[length(which(sdat.thisrun$region=="Nth_America"))/2],side=1,line=5, cex=1.5)
-
-axis(1,which(sdat.thisrun$site_code=="SA")[round(length(which(sdat.thisrun$site_code=="SA"))/2,0)],labels="Africa",tick=F,line=5,las=2,cex.axis=1.5)
-
-# Add labels for native / non-native:
-
-arrows(head(which(sdat.thisrun$region=="Nth_America"),1)+1,1.05,tail(which(sdat.thisrun$site_code=="SA"),1),1.05,lwd=1.5,code=3,angle=90,length=0.05)
-mtext("Non-native",at=head(which(sdat.thisrun$region=="Nth_America"),1)+((tail(which(sdat.thisrun$site_code=="SA"),1)-head(which(sdat.thisrun$region=="Nth_America"),1))/2),side=3,line=1, cex=1.5)
-
-par(xpd=F)
-
-} # close structure plot function V9
-
 # V8 was updated for making custom colour palettes and organising colours so that the colours are consistent for the major groups across multiple K plots 
 
 str_plot_V8<-function(K,cluster.data,site.data,las.opt,yaxs.loc,col.pal,site.lab,add.ccode=NULL,...){
